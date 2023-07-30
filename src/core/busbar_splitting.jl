@@ -7,19 +7,22 @@ function AC_busbar_split(data,bus_to_be_split)
         end
     end
     data["bus"]["$bus_to_be_split"]["split"] = true
+    data["bus"]["$bus_to_be_split"]["ZIL"] = true
     
     # Adding a bus next to the split
     n_buses_original = length(data["bus"])
+    count_ = 0
     for (b_id,b) in data["bus"] 
-        n_buses = length(data["bus"])
-        if b["split"] == true && parse(Int64,b_id) <= n_buses_original
+        if haskey(b,"ZIL") && parse(Int64,b_id) <= n_buses_original
+            count_ += 1
             b["bus_split"] = deepcopy(b["index"])
-            added_bus = n_buses + 1
+            added_bus = n_buses_original + count_
             data["bus"]["$added_bus"] = deepcopy(b)
             data["bus"]["$added_bus"]["bus_i"] = added_bus 
             data["bus"]["$added_bus"]["source_id"][2] = added_bus 
             data["bus"]["$added_bus"]["index"] = added_bus
             data["bus"]["$added_bus"]["split"] = false
+            data["bus"]["$added_bus"]["ZIL"] = true
         end
     end 
     
@@ -30,7 +33,7 @@ function AC_busbar_split(data,bus_to_be_split)
             split_bus = b["bus_split"]
             extremes_ZIL["$split_bus"] = []
         end
-        if haskey(b,"bus_split")
+        if haskey(b,"ZIL")
             for i in eachindex(extremes_ZIL)
                 if b["bus_split"] == parse(Int64,i)
                     push!(extremes_ZIL[i],b["index"])
@@ -198,7 +201,7 @@ function AC_busbar_split(data,bus_to_be_split)
     data["switch_couples"] = Dict{String,Any}()
     data["switch_couples"] = deepcopy(switch_couples)
 
-    return data, switch_couples
+    return data, switch_couples, extremes_ZIL
 end
 
 function compute_couples_of_switches(data)
@@ -239,32 +242,36 @@ function DC_busbar_split(data,bus_to_be_split)
         end
     end
     data["busdc"]["$bus_to_be_split"]["split"] = true
+    data["busdc"]["$bus_to_be_split"]["ZIL"] = true
     
-    # Adding a bus next to the split
-    n_buses_original = length(data["busdc"])
+    # Adding a busdc next to the split
+    n_buses_original_dc = length(data["busdc"])
+    count_dc = 0
     for (b_id,b) in data["busdc"] 
-        n_buses = length(data["busdc"])
-        if b["split"] == true && parse(Int64,b_id) <= n_buses_original
+        if haskey(b,"ZIL") && parse(Int64,b_id) <= n_buses_original_dc
+            count_dc += 1
             b["busdc_split"] = deepcopy(b["index"])
-            added_bus = n_buses + 1
-            data["busdc"]["$added_bus"] = deepcopy(b)
-            data["busdc"]["$added_bus"]["index"] = added_bus 
-            data["busdc"]["$added_bus"]["source_id"][2] = added_bus 
-            data["busdc"]["$added_bus"]["index"] = added_bus
-            data["busdc"]["$added_bus"]["split"] = false
+            added_bus_dc = n_buses_original_dc + count_dc
+            data["busdc"]["$added_bus_dc"] = deepcopy(b)
+            data["busdc"]["$added_bus_dc"]["index"] = added_bus_dc 
+            data["busdc"]["$added_bus_dc"]["source_id"][2] = added_bus_dc 
+            data["busdc"]["$added_bus_dc"]["index"] = added_bus_dc
+            data["busdc"]["$added_bus_dc"]["split"] = false
+            data["busdc"]["$added_bus_dc"]["ZIL"] = true
         end
     end 
+
     
-
-
     # Creating a dictionary with the split buses
     extremes_ZIL_dc = Dict{String,Any}()
     for (b_id,b) in data["busdc"]
         if b["split"] == true && !haskey(extremes_ZIL_dc,b["busdc_split"])
-            split_bus = b["busdc_split"]
-            extremes_ZIL_dc["$split_bus"] = []
+            split_bus_dc = b["busdc_split"]
+            extremes_ZIL_dc["$split_bus_dc"] = []
         end
-        if haskey(b,"busdc_split")
+    end
+    for (b_id,b) in data["busdc"]
+        if haskey(b,"ZIL")
             for i in eachindex(extremes_ZIL_dc)
                 if b["busdc_split"] == parse(Int64,i)
                     push!(extremes_ZIL_dc[i],b["index"])
@@ -273,6 +280,7 @@ function DC_busbar_split(data,bus_to_be_split)
         end
     end
     
+
     data["dcswitch"] = Dict{String,Any}()
     # Adding the Zero Impedance Line (ZIL) through a switch between the split buses
     switch_id = 0
@@ -425,9 +433,8 @@ function DC_busbar_split(data,bus_to_be_split)
         end
     end
 
-    dcswitch_couples = compute_couples_of_switches(data)
+    dcswitch_couples = compute_couples_of_dcswitches(data)
     data["dcswitch_couples"] = Dict{String,Any}()
     data["dcswitch_couples"] = deepcopy(dcswitch_couples)
-
-    return data, dcswitch_couples
+    return data, dcswitch_couples, extremes_ZIL_dc
 end

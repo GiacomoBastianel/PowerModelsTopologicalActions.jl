@@ -27,6 +27,8 @@ data = deepcopy(data_original)
 data_busbar_split = deepcopy(data_original)
 data_sw = _PM.parse_file(data_file_sw)
 
+
+
 data_original_acdc = _PM.parse_file(data_file_acdc)
 data_acdc = deepcopy(data_original_acdc)
 _PMACDC.process_additional_data!(data_acdc)
@@ -49,14 +51,14 @@ result_homemade_ots = _PMTP.run_acdcots_AC(data_acdc,ACPPowerModel,juniper)
 result_homemade_ots_AC_DC = _PMTP.run_acdcots_AC_DC(data_acdc,ACPPowerModel,juniper)
 
 
-data_sw, switch_couples = _PMTP.AC_busbar_split(data_acdc,1)
+data_sw, switch_couples, extremes_ZIL = _PMTP.AC_busbar_split(data_acdc,1)
 
 # AC OTS with handmade for AC/DC grid with switches state as decision variable
 result_PM_AC_DC_switch_AC = _PM._solve_oswpf(data_sw,DCPPowerModel,juniper)
 result_AC_DC_switch_AC = _PMTP.run_acdcsw_AC(data_sw,ACPPowerModel,juniper)
 
-
-data_sw_dc, switch_dccouples = _PMTP.DC_busbar_split(data_acdc,1)
+data_base_sw_dc = deepcopy(data_dc_busbar_split)
+data_sw_dc, switch_dccouples, extremes_ZIL_dc = _PMTP.DC_busbar_split(data_base_sw_dc,1)
 
 result_AC_DC_switch_DC = _PMTP.run_acdcsw_DC(data_sw_dc,ACPPowerModel,juniper)
 
