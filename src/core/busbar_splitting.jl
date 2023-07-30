@@ -292,7 +292,6 @@ function DC_busbar_split(data,bus_to_be_split)
         push!(data["dcswitch"]["$switch_id"]["source_id"],switch_id)
     end
 
-    switch_couples = Dict{String,Any}()
     
     # Add a busdc for each grid element
     # Gen_dc

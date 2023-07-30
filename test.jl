@@ -58,7 +58,7 @@ result_AC_DC_switch_AC = _PMTP.run_acdcsw_AC(data_sw,ACPPowerModel,juniper)
 
 data_sw_dc, switch_dccouples = _PMTP.DC_busbar_split(data_acdc,1)
 
-result_AC_DC_switch_DC = _PMTP.run_acdcsw_DC(data_sw,ACPPowerModel,juniper)
+result_AC_DC_switch_DC = _PMTP.run_acdcsw_DC(data_sw_dc,ACPPowerModel,juniper)
 
 
 #=
