@@ -67,7 +67,7 @@ function variable_dc_switch_power(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_
         [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc)], base_name="$(nw)_p_dc_sw",
         start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "p_dc_sw_start")
     )
-    
+    #=
     if bounded
         flow_lb, flow_ub = _PM.ref_calc_switch_flow_bounds(_PM.ref(pm, nw, :dcswitch), _PM.ref(pm, nw, :busdc))
         for arc in _PM.ref(pm, nw, :arcs_from_sw_dc)
@@ -84,6 +84,7 @@ function variable_dc_switch_power(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_
     # this explicit type erasure is necessary
     p_dc_sw_expr = Dict{Any,Any}( (l,i,j) => p_dc_sw[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc) )
     p_dc_sw_expr = merge(p_dc_sw_expr, Dict( (l,j,i) => -1.0*p_dc_sw[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc)))
+    =#
     _PM.var(pm, nw)[:p_dc_sw] = p_dc_sw_expr
     
     report && _PM.sol_component_value_edge(pm, nw, :dcswitch, :p_dc_sw_fr, :p_dc_sw_to, _PM.ref(pm, nw, :arcs_from_sw_dc), _PM.ref(pm, nw, :arcs_to_sw_dc), p_dc_sw_expr)
