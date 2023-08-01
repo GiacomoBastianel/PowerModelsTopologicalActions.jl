@@ -1,3 +1,5 @@
+
+# Function to split the selected AC busbar and create an augmented network representation of the grid with switches linking every grid element to the two parts of the splitted busbar 
 function AC_busbar_split(data,bus_to_be_split)
 
     # Adding a new key to indicate which bus can be split, choosing it for now -> to be updated
@@ -204,6 +206,7 @@ function AC_busbar_split(data,bus_to_be_split)
     return data, switch_couples, extremes_ZIL
 end
 
+# Stating the from and to bus of every AC switch
 function compute_couples_of_switches(data)
     switch_couples = Dict{String,Any}()
     for (sw_id,sw) in data["switch"]
@@ -218,7 +221,7 @@ function compute_couples_of_switches(data)
     return switch_couples
 end
 
-
+#  Stating the from and to bus of every DC switch
 function compute_couples_of_dcswitches(data)
     switch_couples = Dict{String,Any}()
     for (sw_id,sw) in data["dcswitch"]
@@ -233,6 +236,7 @@ function compute_couples_of_dcswitches(data)
     return switch_couples
 end
 
+# Function to split the selected DC busbar and create an augmented network representation of the grid with switches linking every grid element to the two parts of the splitted busbar 
 function DC_busbar_split(data,bus_to_be_split)
 
     # Adding a new key to indicate which bus can be split, choosing it for now -> to be updated
@@ -309,16 +313,18 @@ function DC_busbar_split(data,bus_to_be_split)
         for i in eachindex(extremes_ZIL_dc)
             if g["gen_bus"] == parse(Int64,i)
                 added_gen_bus = n_buses + 1
-                data["busdc"]["$added_gen_bus"] = deepcopy(data["bus"]["1"])
-                data["busdc"]["$added_gen_bus"]["bus_type"] = 1
-                data["busdc"]["$added_gen_bus"]["bus_i"] = added_gen_bus 
+                data["busdc"]["$added_gen_bus"] = deepcopy(data["busdc"]["1"])
+                data["busdc"]["$added_gen_bus"]["busdc_i"] = added_gen_bus 
                 data["busdc"]["$added_gen_bus"]["index"] = added_gen_bus 
                 data["busdc"]["$added_gen_bus"]["source_id"][2] = added_gen_bus 
                 data["busdc"]["$added_gen_bus"]["auxiliary_bus"] = true
-                data["busdc"]["$added_gen_bus"]["original"] = parse(Int64,g_id)  
                 data["busdc"]["$added_gen_bus"]["auxiliary"] = "gen"
-                data["busdc"]["$added_gen_bus"]["split"] = false
+                data["busdc"]["$added_gen_bus"]["original"] = parse(Int64,g_id)  
                 delete!(data["busdc"]["$added_gen_bus"],"ZIL")
+                if haskey(data["busdc"]["$added_gen_bus"],"split")
+                    delete!(data["busdc"]["$added_gen_bus"],"split")
+                end
+
                 g["gen_bus"] = added_gen_bus
             end
         end
@@ -330,17 +336,17 @@ function DC_busbar_split(data,bus_to_be_split)
         for i in eachindex(extremes_ZIL_dc)
             if l["load_bus"] == parse(Int64,i)
                 added_load_bus = n_buses + 1
-                data["busdc"]["$added_load_bus"] = deepcopy(data["bus"]["1"])
-                data["busdc"]["$added_load_bus"]["bus_type"] = 1
-                data["busdc"]["$added_load_bus"]["bus_i"] = added_load_bus 
+                data["busdc"]["$added_load_bus"] = deepcopy(data["busdc"]["1"])
+                data["busdc"]["$added_load_bus"]["busdc_i"] = added_load_bus 
                 data["busdc"]["$added_load_bus"]["index"] = added_load_bus 
                 data["busdc"]["$added_load_bus"]["source_id"][2] = added_load_bus 
                 data["busdc"]["$added_load_bus"]["auxiliary_bus"] = true 
                 data["busdc"]["$added_load_bus"]["original"] = parse(Int64,l_id)  
                 data["busdc"]["$added_load_bus"]["auxiliary"] = "load"
-                data["busdc"]["$added_load_bus"]["bus_split"] = parse(Int64,i) 
-                data["busdc"]["$added_load_bus"]["split"] = false
                 delete!(data["busdc"]["$added_load_bus"],"ZIL")
+                if haskey(data["busdc"]["$added_load_bus"],"split")
+                    delete!(data["busdc"]["$added_load_bus"],"split")
+                end
                 l["load_bus"] = added_load_bus
             end
         end
