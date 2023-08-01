@@ -193,6 +193,6 @@ function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, i::Int; nw::I
 end
 
 function constraint_exclusivity_dc_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
-    switch_couple = _PM.ref(pm, nw, :dc_switch_couples, i)
+    switch_couple = _PM.ref(pm, nw, :dcswitch_couples, i)
     constraint_exclusivity_dc_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"])
 end

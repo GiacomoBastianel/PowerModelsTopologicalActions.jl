@@ -61,13 +61,75 @@ function variable_dc_switch_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw
     report && _PM.sol_component_value(pm, nw, :dcswitch, :status, _PM.ids(pm, nw, :dcswitch), z_dcswitch)
 end
 
+#=
+p = _PM.var(pm, nw)[:p_dcgrid] = JuMP.@variable(pm.model,
+[(l,i,j) in _PM.ref(pm, nw, :arcs_dcgrid)], base_name="$(nw)_pdcgrid",
+start = _PM.comp_start_value(_PM.ref(pm, nw, :branchdc, l), "p_start", 1.0)
+)
+=#
+
+function variable_dc_switch_test(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=true)
+    p_test = _PM.var(pm, nw)[:p_test] = JuMP.@variable(pm.model,
+    [(l,i,j) in _PM.ref(pm, nw, :arcs_dcgrid)], base_name="$(nw)_pdcgrid",
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :branchdc, l), "p_start", 1.0)
+    )
+
+    if bounded
+        for arc in _PM.ref(pm, nw, :arcs_dcgrid)
+            l,i,j = arc
+            JuMP.set_lower_bound(p_test[arc], -_PM.ref(pm, nw, :branchdc, l)["rateA"])
+            JuMP.set_upper_bound(p_test[arc],  _PM.ref(pm, nw, :branchdc, l)["rateA"])
+        end
+    end
+
+    report && _IM.sol_component_value_edge(pm, _PM.pm_it_sym, nw, :branchdc, :pf, :pt, _PM.ref(pm, nw, :arcs_dcgrid_from), _PM.ref(pm, nw, :arcs_dcgrid_to), p_test)
+end
+
+
+
+
+function variable_active_dcbranch_flow(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=true)
+    p = _PM.var(pm, nw)[:p_dcgrid] = JuMP.@variable(pm.model,
+    [(l,i,j) in _PM.ref(pm, nw, :arcs_dcgrid)], base_name="$(nw)_pdcgrid",
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :branchdc, l), "p_start", 1.0)
+    )
+
+    if bounded
+        for arc in _PM.ref(pm, nw, :arcs_dcgrid)
+            l,i,j = arc
+            JuMP.set_lower_bound(p[arc], -_PM.ref(pm, nw, :branchdc, l)["rateA"])
+            JuMP.set_upper_bound(p[arc],  _PM.ref(pm, nw, :branchdc, l)["rateA"])
+        end
+    end
+
+    report && _IM.sol_component_value_edge(pm, _PM.pm_it_sym, nw, :branchdc, :pf, :pt, _PM.ref(pm, nw, :arcs_dcgrid_from), _PM.ref(pm, nw, :arcs_dcgrid_to), p)
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 "variable: `p_dc_sw[l,i,j]` for `(l,i,j)` in `arcs_dc_sw`"
 function variable_dc_switch_power(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
-    p_dc_sw_ = _PM.var(pm,nw)[:p_dc_sw] = JuMP.variable(pm.model,
+    #p_dc_sw_ = _PM.var(pm, nw)[:p_dc_sw] = JuMP.@variable(pm.model,
+    p_dc_sw_ = JuMP.@variable(pm.model,
         [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc)], base_name="$(nw)_p_dc_sw",
-        start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "p_dc_sw_start")
+        start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "p_dc_sw_start", 1.0)
     )
-    #=
+    
     if bounded
         flow_lb, flow_ub = _PM.ref_calc_switch_flow_bounds(_PM.ref(pm, nw, :dcswitch), _PM.ref(pm, nw, :busdc))
         for arc in _PM.ref(pm, nw, :arcs_from_sw_dc)
@@ -76,15 +138,14 @@ function variable_dc_switch_power(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_
                 JuMP.set_lower_bound(p_dc_sw_[arc], flow_lb[l])
             end
             if !isinf(flow_ub[l])
-                JuMP.set_upper_bound(p_dc_sw[arc], flow_ub[l])
+                JuMP.set_upper_bound(p_dc_sw_[arc], flow_ub[l])
             end
         end
     end
-
+    
     # this explicit type erasure is necessary
-    p_dc_sw_expr = Dict{Any,Any}( (l,i,j) => p_dc_sw[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc) )
-    p_dc_sw_expr = merge(p_dc_sw_expr, Dict( (l,j,i) => -1.0*p_dc_sw[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc)))
-    =#
+    p_dc_sw_expr = Dict{Any,Any}( (l,i,j) => p_dc_sw_[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc) )
+    p_dc_sw_expr = merge(p_dc_sw_expr, Dict( (l,j,i) => -1.0*p_dc_sw_[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc)))
     _PM.var(pm, nw)[:p_dc_sw] = p_dc_sw_expr
     
     report && _PM.sol_component_value_edge(pm, nw, :dcswitch, :p_dc_sw_fr, :p_dc_sw_to, _PM.ref(pm, nw, :arcs_from_sw_dc), _PM.ref(pm, nw, :arcs_to_sw_dc), p_dc_sw_expr)

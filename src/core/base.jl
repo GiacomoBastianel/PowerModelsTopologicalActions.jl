@@ -32,11 +32,11 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
             #nw_ref[:dcswitch] = Dict([x for x in nw_ref[:dcswitch] if (x.second["status"] == 1 && "$(x.second["f_busdc"])" in keys(nw_ref[:busdc]) && "$(x.second["t_busdc"])" in keys(nw_ref[:busdc]))])
             #print(nw_ref[:dcswitch],"\n")
             nw_ref[:arcs_from_sw_dc] = [(i,switch["f_busdc"],switch["t_busdc"]) for (i,switch) in nw_ref[:dcswitch]]
-            print(nw_ref[:arcs_from_sw_dc],"\n")
+            #print(nw_ref[:arcs_from_sw_dc],"\n")
             nw_ref[:arcs_to_sw_dc]   = [(i,switch["t_busdc"],switch["f_busdc"]) for (i,switch) in nw_ref[:dcswitch]]
-            print(nw_ref[:arcs_to_sw_dc],"\n")
+            #print(nw_ref[:arcs_to_sw_dc],"\n")
             nw_ref[:arcs_sw_dc] = [nw_ref[:arcs_from_sw_dc]; nw_ref[:arcs_to_sw_dc]]
-            print(nw_ref[:arcs_sw_dc],"\n")
+            #print(nw_ref[:arcs_sw_dc],"\n")
         else 
             nw_ref[:dcswitch] = Dict{String, Any}()
             nw_ref[:arcs_from_sw_dc] = Dict{String, Any}()
@@ -46,14 +46,25 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
         if haskey(nw_ref,:dcswitch)
             print("dcswitch","\n")
             ### bus connected component lookups ###
-            bus_arcs_sw_dc = Dict([(bus["busdc_i"], []) for (i,bus) in nw_ref[:busdc]])
+            #bus_arcs_sw_dc = Dict([(bus["busdc_i"], []) for (i,bus) in nw_ref[:busdc]])
+            #for (l,i,j) in nw_ref[:arcs_sw_dc]
+            #    print((l,i,j),"\n")
+            #    push!(bus_arcs_sw_dc[i], (l,i,j))
+            #    print(bus_arcs_sw_dc,"\n")
+            #end
+            #nw_ref[:bus_arcs_sw_dc] = bus_arcs_sw_dc
+
+
+            bus_arcs_sw_dc = Dict((i, Tuple{Int,Int,Int}[]) for (i,bus) in nw_ref[:busdc])
             for (l,i,j) in nw_ref[:arcs_sw_dc]
                 print((l,i,j),"\n")
                 push!(bus_arcs_sw_dc[i], (l,i,j))
                 print(bus_arcs_sw_dc,"\n")
             end
             nw_ref[:bus_arcs_sw_dc] = bus_arcs_sw_dc
-            print(bus_arcs_sw_dc,"\n")
+
+
+            #print(bus_arcs_sw_dc,"\n")
         end
         if haskey(nw_ref, :convdc)
             print("convdc","\n")
@@ -139,7 +150,7 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
         print(nw_ref[:arcs_dcgrid],"\n")
         print("dioladro","\n")
         print(nw_ref[:arcs_from_sw_dc],"\n")
-        =#
         print(nw_ref,"\n")
+        =#
     end
 end
