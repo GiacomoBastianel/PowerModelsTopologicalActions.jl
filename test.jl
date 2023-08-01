@@ -4,37 +4,38 @@ using HiGHS, Gurobi, Juniper
 using PowerModelsACDC; const _PMACDC = PowerModelsACDC
 import PowerModelsTopologicalActionsII; const _PMTP = PowerModelsTopologicalActionsII
 
-# Define solver
+#######################################################################################
+## Define solver ##
+#######################################################################################
+
 ipopt_solver = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
 highs = JuMP.optimizer_with_attributes(HiGHS.Optimizer)
 gurobi = JuMP.optimizer_with_attributes(Gurobi.Optimizer)
 juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt_solver, "mip_solver" => highs, "time_limit" => 7200)
 
+#######################################################################################
+## Input data ##
+#######################################################################################
 
-## Input data
 test_case = "case5.m"
 test_case_sw = "case5_sw.m"
 test_case_acdc = "case5_acdc.m"
 
+#######################################################################################
+## Parsing input data ##
+#######################################################################################
 
-## Parsing with Powermodels
 data_file_acdc = joinpath(@__DIR__,"data_sources",test_case_acdc)
-#=
-data_file = joinpath(@__DIR__,"data_sources",test_case)
-data_file_sw = joinpath(@__DIR__,"data_sources",test_case_sw)
-
-data_original = _PM.parse_file(data_file)
-data = deepcopy(data_original)
-data_busbar_split = deepcopy(data_original)
-data_sw = _PM.parse_file(data_file_sw)
-=#
-
 
 data_original_acdc = _PM.parse_file(data_file_acdc)
 data_acdc = deepcopy(data_original_acdc)
 _PMACDC.process_additional_data!(data_acdc)
 s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => true)
 data_dc_busbar_split = deepcopy(data_acdc)
+
+#######################################################################################
+## Optimal transmission switching models ##
+#######################################################################################
 
 # AC OTS with PowerModels for AC grid
 result_ots = _PM.solve_ots(data,ACPPowerModel,juniper)
@@ -51,6 +52,9 @@ result_homemade_ots = _PMTP.run_acdcots_AC(data_acdc,ACPPowerModel,juniper)
 # Solving AC OTS with OTS on both AC and DC grid part
 result_homemade_ots_AC_DC = _PMTP.run_acdcots_AC_DC(data_acdc,ACPPowerModel,juniper)
 
+#######################################################################################
+## Busbar splitting models ##
+#######################################################################################
 
 data_sw, switch_couples, extremes_ZIL = _PMTP.AC_busbar_split(data_acdc,1)
 
@@ -65,8 +69,6 @@ data_sw_dc, switch_dccouples, extremes_ZIL_dc = _PMTP.DC_busbar_split(data_base_
 result_AC_DC_switch_DC = _PMTP.run_acdcsw_DC(data_sw_dc,ACPPowerModel,juniper)
 
 
-run_acdcsw_AC_DC
-
 # AC OTS for AC/DC grid with AC and DC switches state as decision variable
 data_base_sw_acdc = deepcopy(data_dc_busbar_split)
 data_sw_acdc, switch_couples, extremes_ZIL = _PMTP.AC_busbar_split(data_base_sw_acdc,1)
@@ -74,34 +76,6 @@ data_sw_acdc, switch_dccouples, extremes_ZIL_dc = _PMTP.DC_busbar_split(data_sw_
 
 result_AC_DC_switch_AC_DC = _PMTP.run_acdcsw_AC_DC(data_sw_acdc,ACPPowerModel,juniper)
 
-
-
-# Splitting the selected bus
-
-# AC OTS with PowerModels for AC grid with fixed switches
-result_switch_fixed = _PM._solve_opf_sw(data_sw,ACPPowerModel,juniper)
-
-# AC OTS with PowerModels and handmade for AC grid with switches state as decision variable
-# Infeasible
-result_PM_switch = _PM._solve_oswpf(grid,ACPPowerModel,juniper)
-result_switch = _PMTP.solve_ots_switch(grid,ACPPowerModel,juniper)
-
-# DC linearization working
-result_PM_switch_DC_fixed = _PM._solve_opf_sw(grid,DCPPowerModel,juniper)
-result_PM_switch_DC = _PM._solve_oswpf(grid,DCPPowerModel,juniper)
-result_switch_DC = _PMTP.solve_ots_switch(grid,DCPPowerModel,juniper)
-result_switch_DC_busbar_splitting = _PMTP._solve_oswpf_busbar_splitting(grid,DCPPowerModel,juniper)
-
-# SOC relaxation working
-result_PM_switch_SOC_fixed = _PM._solve_opf_sw(grid,SOCWRPowerModel,juniper)
-result_PM_switch_SOC = _PM._solve_oswpf(grid,SOCWRPowerModel,juniper)
-result_switch_SOC = _PMTP.solve_ots_switch(grid,SOCWRPowerModel,juniper)
-result_switch_SOC_busbar_splitting = _PMTP._solve_oswpf_busbar_splitting(grid,SOCWRPowerModel,juniper)
-
-# QC relaxation
-result_PM_switch_QC_fixed = _PM._solve_opf_sw(grid,QCRMPowerModel,juniper)
-result_PM_switch_QC = _PM._solve_oswpf(grid,QCRMPowerModel,juniper)
-result_switch_QC = _PMTP.solve_ots_switch(grid,QCRMPowerModel,juniper)
-result_switch_QC_busbar_splitting = _PMTP._solve_oswpf_busbar_splitting(grid,QCRMPowerModel,juniper)
+#######################################################################################
 
 
