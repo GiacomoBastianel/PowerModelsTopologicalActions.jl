@@ -3,7 +3,6 @@ using Ipopt, JuMP
 using HiGHS, Gurobi, Juniper
 using PowerModelsACDC; const _PMACDC = PowerModelsACDC
 import PowerModelsTopologicalActionsII; const _PMTP = PowerModelsTopologicalActionsII
-using PowerModelsTopologicalActionsII
 
 # Define solver
 ipopt_solver = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
@@ -66,11 +65,14 @@ data_sw_dc, switch_dccouples, extremes_ZIL_dc = _PMTP.DC_busbar_split(data_base_
 result_AC_DC_switch_DC = _PMTP.run_acdcsw_DC(data_sw_dc,ACPPowerModel,juniper)
 
 
+run_acdcsw_AC_DC
+
 # AC OTS for AC/DC grid with AC and DC switches state as decision variable
 data_base_sw_acdc = deepcopy(data_dc_busbar_split)
-data_sw, switch_couples, extremes_ZIL = _PMTP.AC_busbar_split(data_acdc,1)
-data_sw_dc, switch_dccouples, extremes_ZIL_dc = _PMTP.DC_busbar_split(data_base_sw_dc,1)
+data_sw_acdc, switch_couples, extremes_ZIL = _PMTP.AC_busbar_split(data_base_sw_acdc,1)
+data_sw_acdc, switch_dccouples, extremes_ZIL_dc = _PMTP.DC_busbar_split(data_sw_acdc,1)
 
+result_AC_DC_switch_AC_DC = _PMTP.run_acdcsw_AC_DC(data_sw_acdc,ACPPowerModel,juniper)
 
 
 

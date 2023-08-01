@@ -35,6 +35,7 @@ include("prob/acdcots_DC.jl")
 include("prob/acdcots_AC_DC.jl")
 include("prob/acdcsw_AC.jl")
 include("prob/acdcsw_DC.jl")
+include("prob/acdcsw_AC_DC.jl")
 include("prob/ots_AC.jl")
 
 include("form/acp.jl")

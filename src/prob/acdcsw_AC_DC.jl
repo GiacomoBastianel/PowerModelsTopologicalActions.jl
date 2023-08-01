@@ -1,16 +1,19 @@
-export run_acdcsw_DC
+export run_acdcsw_AC_DC
 
 
 # DC Busbar splitting for AC/DC grid
 "ACDC opf with controllable switches in DC busbar splitting configuration for AC/DC grids"
-function run_acdcsw_DC(file, model_constructor, optimizer; kwargs...)
-    return _PM.solve_model(file, model_constructor, optimizer, build_acdcsw_DC; ref_extensions=[add_ref_dcgrid_dcswitch!,_PM.ref_add_on_off_va_bounds!], kwargs...)
+function run_acdcsw_AC_DC(file, model_constructor, optimizer; kwargs...)
+    return _PM.solve_model(file, model_constructor, optimizer, build_acdcsw_AC_DC; ref_extensions=[add_ref_dcgrid_dcswitch!,_PM.ref_add_on_off_va_bounds!], kwargs...)
 end
 
 ""
-function build_acdcsw_DC(pm::_PM.AbstractPowerModel)
+function build_acdcsw_AC_DC(pm::_PM.AbstractPowerModel)
     _PM.variable_bus_voltage(pm)
     _PM.variable_gen_power(pm)
+
+    _PM.variable_switch_indicator(pm)
+    _PM.variable_switch_power(pm)
 
     variable_dc_switch_indicator(pm)
 
@@ -35,12 +38,21 @@ function build_acdcsw_DC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :bus)
-        _PM.constraint_power_balance(pm, i)
+        constraint_power_balance_ac_switch(pm, i)
+    end
+
+    for i in _PM.ids(pm, :switch)
+        _PM.constraint_switch_on_off(pm, i)
+        _PM.constraint_switch_thermal_limit(pm, i)
     end
 
     for i in _PM.ids(pm, :dcswitch)
         constraint_dc_switch_on_off(pm, i)
         constraint_dc_switch_thermal_limit(pm, i)
+    end
+
+    for i in _PM.ids(pm, :switch_couples)
+        constraint_exclusivity_switch(pm, i)
     end
 
     for i in _PM.ids(pm, :dcswitch_couples)
