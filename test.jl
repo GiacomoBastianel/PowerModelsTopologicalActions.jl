@@ -3,6 +3,7 @@ using Ipopt, JuMP
 using HiGHS, Gurobi, Juniper
 using PowerModelsACDC; const _PMACDC = PowerModelsACDC
 import PowerModelsTopologicalActionsII; const _PMTP = PowerModelsTopologicalActionsII
+using PowerModelsTopologicalActionsII   
 
 #######################################################################################
 ## Define solver ##
@@ -78,4 +79,24 @@ result_AC_DC_switch_AC_DC = _PMTP.run_acdcsw_AC_DC(data_sw_acdc,ACPPowerModel,ju
 
 #######################################################################################
 
+data_ac_busbar_split_one_bus = deepcopy(data_acdc)
+data_ac_busbar_split_more_buses = deepcopy(data_acdc)
+splitted_buses = [1,2]
+splitted_buses_dc = [1,2]
 
+
+data_sw, switch_couples, extremes_ZIL = _PMTP.AC_busbar_split(data_ac_busbar_split_one_bus,1)
+
+
+data_ac_busbar_split_more_buses = deepcopy(data_acdc)
+data_sw_more, switch_couples_more, extremes_ZIL_more  = _PMTP.AC_busbar_split_more_buses(data_ac_busbar_split_more_buses,splitted_buses)
+
+
+result_AC_DC_switch_AC_sw = _PMTP.run_acdcsw_AC(data_sw,ACPPowerModel,juniper)
+result_AC_DC_switch_AC = _PMTP.run_acdcsw_AC(data_sw_more,ACPPowerModel,juniper)
+
+
+
+data_ac_busbar_split_more_buses_dc = deepcopy(data_acdc)
+data_sw_more_dc, switch_couples_dc_more, extremes_ZIL_dc_more  = _PMTP.DC_busbar_split_more_buses(data_ac_busbar_split_more_buses_dc,splitted_buses)
+result_AC_DC_switch_DC_more = _PMTP.run_acdcsw_DC(data_sw_more_dc,ACPPowerModel,juniper)

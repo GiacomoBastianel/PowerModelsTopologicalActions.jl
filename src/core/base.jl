@@ -13,7 +13,6 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
                 push!(bus_arcs_dcgrid[i], (l,i,j))
             end
             nw_ref[:bus_arcs_dcgrid] = bus_arcs_dcgrid
-            print(bus_arcs_dcgrid,"\n")
         else
             nw_ref[:branchdc] = Dict{String, Any}()
             nw_ref[:arcs_dcgrid] = Dict{String, Any}()
@@ -41,9 +40,7 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
             ### bus connected component lookups ###
             bus_arcs_sw_dc = Dict((i, Tuple{Int,Int,Int}[]) for (i,bus) in nw_ref[:busdc])
             for (l,i,j) in nw_ref[:arcs_sw_dc]
-                print((l,i,j),"\n")
                 push!(bus_arcs_sw_dc[i], (l,i,j))
-                print(bus_arcs_sw_dc,"\n")
             end
             nw_ref[:bus_arcs_sw_dc] = bus_arcs_sw_dc
         end
@@ -122,6 +119,8 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
             nw_ref[:arcs_to_sw]   = [(i,switch["t_bus"],switch["f_bus"]) for (i,switch) in nw_ref[:switch]]
             nw_ref[:arcs_sw] = [nw_ref[:arcs_from_sw]; nw_ref[:arcs_to_sw]]
         end
+
+
 
     end
 end
