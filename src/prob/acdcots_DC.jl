@@ -16,15 +16,19 @@ end
 
 ""
 function build_acdcots_DC(pm::_PM.AbstractPowerModel)
+    # AC grid
     _PM.variable_bus_voltage(pm)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
 
+    # DC grid
     _PMACDC.variable_active_dcbranch_flow(pm)
     _PMACDC.variable_dcbranch_current(pm)
     _PMACDC.variable_dc_converter(pm)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
+
+    # OTS variables for DC grid
     variable_dc_branch_indicator(pm)
     variable_dc_conv_indicator(pm)
 
@@ -56,17 +60,15 @@ function build_acdcots_DC(pm::_PM.AbstractPowerModel)
         constraint_branch_limit_on_off_dc_ots(pm,i)
     end
     for i in _PM.ids(pm, :convdc)
-        _PMACDC.constraint_converter_losses(pm, i)
-        _PMACDC.constraint_converter_current(pm,i)
-        _PMACDC.constraint_conv_transformer(pm, i)
-        _PMACDC.constraint_conv_reactor(pm, i)
+        constraint_converter_losses_dc_ots(pm, i)
+        constraint_converter_current_dc_ots(pm,i)
+        constraint_conv_transformer_dc_ots(pm, i)
+        constraint_conv_reactor_dc_ots(pm, i)
         _PMACDC.constraint_conv_filter(pm, i)
+        constraint_converter_limit_on_off_dc_ots(pm,i)
         if pm.ref[:it][:pm][:nw][_PM.nw_id_default][:convdc][i]["islcc"] == 1
             _PMACDC.constraint_conv_firing_angle(pm, i)
         end
-
-        constraint_converter_limit_on_off_dc_ots(pm,i)
-
     end
 end
 

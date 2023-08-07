@@ -1,5 +1,6 @@
 function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:Any})
     for (n, nw_ref) in ref[:it][:pm][:nw]
+        #print(ref[:it][:pm][:nw])
         if haskey(nw_ref, :branchdc)
             print("branchdc","\n")
             nw_ref[:branchdc] = Dict([x for x in nw_ref[:branchdc] if (x.second["status"] == 1 && x.second["fbusdc"] in keys(nw_ref[:busdc]) && x.second["tbusdc"] in keys(nw_ref[:busdc]))])
@@ -13,6 +14,16 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
                 push!(bus_arcs_dcgrid[i], (l,i,j))
             end
             nw_ref[:bus_arcs_dcgrid] = bus_arcs_dcgrid
+            bus_arcs_dcgrid_from = Dict([(bus["busdc_i"], []) for (i,bus) in nw_ref[:busdc]])
+            for (l,i,j) in nw_ref[:arcs_dcgrid_from]
+                push!(bus_arcs_dcgrid_from[i], (l,i,j))
+            end
+            nw_ref[:bus_arcs_dcgrid_from] = bus_arcs_dcgrid_from
+            bus_arcs_dcgrid_to = Dict([(bus["busdc_i"], []) for (i,bus) in nw_ref[:busdc]])
+            for (l,i,j) in nw_ref[:arcs_dcgrid_to]
+                push!(bus_arcs_dcgrid_to[i], (l,i,j))
+            end
+            nw_ref[:bus_arcs_dcgrid_to] = bus_arcs_dcgrid_to
         else
             nw_ref[:branchdc] = Dict{String, Any}()
             nw_ref[:arcs_dcgrid] = Dict{String, Any}()
@@ -26,6 +37,18 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
             end
 
         end
+
+        bus_arcs_from = Dict([(bus["bus_i"], []) for (i,bus) in nw_ref[:bus]])
+        for (l,i,j) in nw_ref[:arcs_from]
+            push!(bus_arcs_from[i], (l,i,j))
+        end
+        nw_ref[:bus_arcs_from] = bus_arcs_from
+        bus_arcs_to = Dict([(bus["bus_i"], []) for (i,bus) in nw_ref[:bus]])
+        for (l,i,j) in nw_ref[:arcs_to]
+            push!(bus_arcs_to[i], (l,i,j))
+        end
+        nw_ref[:bus_arcs_to] = bus_arcs_to
+
         if haskey(nw_ref,:dcswitch)
             nw_ref[:arcs_from_sw_dc] = [(i,switch["f_busdc"],switch["t_busdc"]) for (i,switch) in nw_ref[:dcswitch]]
             nw_ref[:arcs_to_sw_dc]   = [(i,switch["t_busdc"],switch["f_busdc"]) for (i,switch) in nw_ref[:dcswitch]]
@@ -119,8 +142,14 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
             nw_ref[:arcs_to_sw]   = [(i,switch["t_bus"],switch["f_bus"]) for (i,switch) in nw_ref[:switch]]
             nw_ref[:arcs_sw] = [nw_ref[:arcs_from_sw]; nw_ref[:arcs_to_sw]]
         end
+        print("\n")
+        print("\n")
+        print("\n")
+        print("\n")
 
-
+        pf = Dict(k => ref[:it][:pm][:nw] for k in nw_ref[:bus_arcs_from])
+        print(pf)
+        #pf = Dict(k => _PM.ref(pm, nw, :branch, k, "pf") for k in nw_ref[:bus_arcs_from])
 
     end
 end

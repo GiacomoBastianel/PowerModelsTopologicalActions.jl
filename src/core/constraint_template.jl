@@ -139,7 +139,7 @@ end
 
 function constraint_conv_filter_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     conv = _PM.ref(pm, nw, :convdc, i)
-    constraint_conv_filter(pm, nw, i, conv["bf"], Bool(conv["filter"]) )
+    constraint_conv_filter_dc_ots(pm, nw, i, conv["bf"], Bool(conv["filter"]) )
 end
 
 

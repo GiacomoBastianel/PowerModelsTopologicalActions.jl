@@ -44,3 +44,13 @@ AbstractDCPLLModel <: AbstractDCPModel
 
 mutable struct DCPLLPowerModel <: AbstractDCPLLModel @pm_fields end
 ```
+
+
+-> SOCWRPowerModel <: AbstractWRForm: SOC relaxation
+-> QCRMPowerModel <: AbstractWRForm: QC relaxation
+
+-> DCPPowerModel
+
+
+LAST:
+-> AbstractSDPWRMModel <: AbstractWRMModel: SDP relaxation

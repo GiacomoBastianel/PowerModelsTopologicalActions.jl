@@ -19,12 +19,34 @@ function variable_dc_branch_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw
     report && _PM.sol_component_value(pm, nw, :branchdc, :br_status, _PM.ids(pm, nw, :branchdc), z_ots_dc_var)
 end
 
+function variable_dc_branch_indicator_one(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)
+    if !relax
+        z_ots_dc_var = _PM.var(pm, nw)[:z_ots_dc] = JuMP.@variable(pm.model,
+            [l in _PM.ids(pm, nw, :branchdc)], base_name="$(nw)_z_ots_dc",
+            binary = false,
+            lower_bound = 1.0,
+            upper_bound = 1.0,
+            start = _PM.comp_start_value(_PM.ref(pm, nw, :branchdc, l), "z_ots_start_dc", 1.0)
+        )
+    else
+        z_ots_dc_var = _PM.var(pm, nw)[:z_ots_dc] = JuMP.@variable(pm.model,
+            [l in _PM.ids(pm, nw, :branchdc)], base_name="$(nw)_z_ots_dc",
+            lower_bound = 0.0,
+            upper_bound = 1.0,
+            start = _PM.comp_start_value(_PM.ref(pm, nw, :branchdc, l), "z_ots_start_dc", 1.0)
+        )
+    end
+
+    report && _PM.sol_component_value(pm, nw, :branchdc, :br_status, _PM.ids(pm, nw, :branchdc), z_ots_dc_var)
+end
+
+
 function variable_dc_conv_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)
     if !relax
         z_ots_conv_DC_var = _PM.var(pm, nw)[:z_conv_dc] = JuMP.@variable(pm.model,
             [l in _PM.ids(pm, nw, :convdc)], base_name="$(nw)_z_conv_DC",
             binary = true,
-            #start = _PM.comp_start_value(_PM.ref(pm, nw, :convdc, l), "z_conv_start_DC", 1.0)
+            start = _PM.comp_start_value(_PM.ref(pm, nw, :convdc, l), "z_conv_start_DC", 1.0)
         )
     else
         z_ots_conv_DC_var = _PM.var(pm, nw)[:z_conv_dc] = JuMP.@variable(pm.model,

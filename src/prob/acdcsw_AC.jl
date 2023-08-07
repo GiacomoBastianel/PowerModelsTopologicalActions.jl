@@ -9,32 +9,33 @@ end
 
 ""
 function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
+    # AC grid
     _PM.variable_bus_voltage(pm)
     _PM.variable_gen_power(pm)
+    _PM.variable_branch_power(pm)
 
     _PM.variable_switch_indicator(pm)
     _PM.variable_switch_power(pm)
 
-    _PM.variable_branch_power(pm)
-    _PM.variable_dcline_power(pm)
-
-    _PM.objective_min_fuel_and_flow_cost(pm)
-
-    _PM.constraint_model_voltage(pm)
-
+    # DC grid
     _PMACDC.variable_active_dcbranch_flow(pm)
     _PMACDC.variable_dcbranch_current(pm)
     _PMACDC.variable_dc_converter(pm)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
-    _PMACDC.constraint_voltage_dc(pm)
 
+    # Objective function
+    _PM.objective_min_fuel_and_flow_cost(pm)
+
+    # Constraints
+    _PM.constraint_model_voltage(pm)
+    _PMACDC.constraint_voltage_dc(pm)
 
     for i in _PM.ids(pm, :ref_buses)
         _PM.constraint_theta_ref(pm, i)
     end
 
     for i in _PM.ids(pm, :bus)
-        _PM.constraint_power_balance(pm, i)
+        constraint_power_balance_ac_switch(pm, i)
     end
 
     for i in _PM.ids(pm, :switch)
@@ -49,9 +50,7 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
     for i in _PM.ids(pm, :branch)
         _PM.constraint_ohms_yt_from(pm, i)
         _PM.constraint_ohms_yt_to(pm, i)
-
         _PM.constraint_voltage_angle_difference(pm, i)
-
         _PM.constraint_thermal_limit_from(pm, i)
         _PM.constraint_thermal_limit_to(pm, i)
     end

@@ -66,8 +66,10 @@ function build_acdcsw_DC(pm::_PM.AbstractPowerModel)
     end
     for i in _PM.ids(pm, :branchdc)
         _PMACDC.constraint_ohms_dc_branch(pm, i)
+        #_PMACDC.constraint_dc_branch_current(pm,i)
     end
     for i in _PM.ids(pm, :convdc)
+        #_PMACDC.constraint_voltage_product_converter(pm,i)
         _PMACDC.constraint_converter_losses(pm, i)
         _PMACDC.constraint_converter_current(pm, i)
         _PMACDC.constraint_conv_transformer(pm, i)
