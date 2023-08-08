@@ -7,7 +7,7 @@ function constraint_ohms_ots_dc_branch(pm::_PM.AbstractACPModel, n::Int, f_bus, 
     z = _PM.var(pm, n, :z_ots_dc, i)
 
     if r == 0
-        JuMP.@constraint(pm.model, p_dc_fr + p_dc_to == 0)
+        JuMP.@constraint(pm.model, z*p_dc_fr + z*p_dc_to == 0)
     else
         g = 1 / r
         JuMP.@NLconstraint(pm.model, p_dc_fr == z*(p * g * vmdc_fr * (vmdc_fr - vmdc_to)))

@@ -63,24 +63,34 @@ data_Belgian_grid_acdc = deepcopy(data_original_Belgian_grid)
 ## Optimal transmission switching models ##
 #######################################################################################
 # AC OPF for ACDC grid
-result_opf_5    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt)
+result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s)
 
 # SOC OPF for ACDC grid
-result_opf_soc_5    = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,ipopt)
+result_opf_soc_5    = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,ipopt; setting = s)
+
+# DC OPF for ACDC grid
+result_opf_5_dc    = _PMACDC.run_acdcopf(data_5_acdc,DCPPowerModel,ipopt; setting = s)
 
 
 # Solving AC OTS with OTS only on the AC grid part
 result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper)
 
 # SOC and QC are essentially the same here -> proof
-result_AC_ots_5_soc    = _PMTP.run_acdcots_AC(data_5_acdc,SOCWRPowerModel,juniper)
-result_AC_ots_5_qc    = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,juniper)
+result_PM_ots_5_soc  = _PM.solve_ots(data_5_acdc,SOCWRPowerModel,juniper)
+result_PM_ots_5_qc   = _PM.solve_ots(data_5_acdc,QCRMPowerModel,juniper)
+
+result_AC_ots_5_soc  = _PMTP.run_acdcots_AC(data_5_acdc,SOCWRPowerModel,juniper)
+result_AC_ots_5_qc   = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,juniper)
+#result_AC_ots_5_dc  = _PMTP.run_acdcots_AC(data_5_acdc,DCPPowerModel,juniper) -> not working
 
 
 # Solving AC OTS with OTS only on the DC grid part 
-result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,ACPPowerModel,juniper)
-result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,SOCWRPowerModel,juniper)
+result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+#result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,SOCWRPowerModel,juniper)
 
+
+# Still not working, constraints to be checked here
+#result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,DCPPowerModel,juniper; setting = s)
 
 # Solving AC OTS with OTS on both AC and DC grid part
 result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,juniper)
@@ -90,27 +100,23 @@ result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,junipe
 #######################################################################################
 # AC OTS for AC/DC grid with AC switches state as decision variable
 data_busbar_ac_split_5_acdc = deepcopy(data_5_acdc)
-data_busbar_ac_split_5_acdc, switch_couples_ac_5,   extremes_ZIL_5_ac  = _PMTP.AC_busbar_split(data_busbar_ac_split_5_acdc,1)
-
+data_busbar_ac_split_5_acdc, switch_couples_ac_5,   extremes_ZIL_5_ac  = _PMTP.AC_busbar_split(data_busbar_ac_split_5_acdc,5)
 result_AC_DC_5_switch_AC  = _PMTP.run_acdcsw_AC(data_busbar_ac_split_5_acdc,ACPPowerModel,juniper)
 
 
 # AC OTS for AC/DC grid with DC switches state as decision variable
 data_busbar_dc_split_5_acdc = deepcopy(data_5_acdc)
-
 data_busbar_dc_split_5_acdc , switch_couples_dc_5,  extremes_ZIL_5_dc  = _PMTP.DC_busbar_split(data_busbar_dc_split_5_acdc,1)
-
 result_AC_DC_5_switch_DC  = _PMTP.run_acdcsw_DC(data_busbar_dc_split_5_acdc, ACPPowerModel,juniper)
 
 
 
 # AC OTS for AC/DC grid with AC and DC switches state as decision variable
 data_busbar_ac_dc_split_5_acdc = deepcopy(data_5_acdc)
+data_busbar_ac_dc_split_5_acdc_ac_sw, ac_switch_couples_ac_dc_5, extremes_ZIL_5_ac  = _PMTP.AC_busbar_split(data_busbar_ac_dc_split_5_acdc,1)
+data_busbar_ac_dc_split_5_acdc_ac_dc_sw, dc_switch_couples_ac_dc_5, extremes_ZIL_5_dc  = _PMTP.DC_busbar_split(data_busbar_ac_dc_split_5_acdc_ac_sw,1)
 
-data_busbar_ac_dc_split_5_acdc, ac_switch_couples_ac_dc_5, extremes_ZIL_5_ac  = _PMTP.AC_busbar_split(data_busbar_ac_dc_split_5_acdc,1)
-data_busbar_ac_dc_split_5_acdc , dc_switch_couples_ac_dc_5, extremes_ZIL_5_dc  = _PMTP.DC_busbar_split(data_busbar_ac_dc_split_5_acdc,1)
-
-result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbar_dc_split_5_acdc, ACPPowerModel,juniper)
+result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbar_ac_dc_split_5_acdc_ac_dc_sw, ACPPowerModel,juniper)
 
 #######################################################################################
 ## Busbar splitting (more than one busbar) models ##
@@ -133,8 +139,8 @@ data_busbars_ac_dc_split_5_acdc = deepcopy(data_5_acdc)
 splitted_bus_ac = [1,2]
 splitted_bus_dc = [1,2]
 
-data_busbars_ac_dc_split_5_acdc,  switches_couples_ac_dc_5,  extremes_ZILs_5_ac_dc  = _PMTP.AC_busbar_split(data_busbar_ac_dc_split_5_acdc,zsplitted_bus_ac)
-data_busbars_ac_dc_split_5_acdc , switches_couples_ac_dc_5,  extremes_ZILs_5_ac_dc  = _PMTP.DC_busbar_split(data_busbar_ac_dc_split_5_acdc,splitted_bus_dc)
+data_busbars_ac_dc_split_5_acdc_ac_sw,  switches_couples_ac_dc_5,  extremes_ZILs_5_ac_dc  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc,splitted_bus_ac)
+data_busbars_ac_dc_split_5_acdc_ac_dc_sw , switches_couples_ac_dc_5,  extremes_ZILs_5_ac_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc_ac_sw,splitted_bus_dc)
 
 result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_5_acdc, ACPPowerModel,juniper)
 #######################################################################################

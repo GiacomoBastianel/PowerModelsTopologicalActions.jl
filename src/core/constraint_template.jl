@@ -50,15 +50,33 @@ function constraint_power_balance_dc_switch(pm::_PM.AbstractPowerModel, i::Int; 
     constraint_power_balance_dc_switch(pm, nw, i, bus_arcs_dcgrid, bus_convs_dc, bus_arcs_sw_dc, pd)
 end
 
-function constraint_converter_current_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+function constraint_converter_current_dc_ots(pm::_PM.AbstractACPModel, i::Int; nw::Int=_PM.nw_id_default)
     conv = _PM.ref(pm, nw, :convdc, i)
     Vmax = conv["Vmmax"]
     Imax = conv["Imax"]
     constraint_converter_current_dc_ots(pm, nw, i, Vmax, Imax)
 end
 
+function constraint_converter_current_dc_ots(pm::_PM.AbstractDCPModel, i::Int; nw::Int=_PM.nw_id_default)
+    conv = _PM.ref(pm, nw, :convdc, i)
+    Vmax = conv["Vmmax"]
+    Imax = conv["Imax"]
+    constraint_converter_current_dc_ots(pm, nw, i, Vmax, Imax)
+end
 
-function constraint_voltage_angle_difference_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+function constraint_voltage_angle_difference_ots(pm::_PM.AbstractACPModel, i::Int; nw::Int=_PM.nw_id_default)
+    branch = _PM.ref(pm,nw,:branch,i)
+    f_bus = branch["f_bus"]
+    t_bus = branch["t_bus"]
+    f_idx = (i, f_bus, t_bus)
+    pair = (f_bus, t_bus)
+    buspair = _PM.ref(pm, nw, :buspairs, pair)
+
+    #if buspair["branch"] == i
+        constraint_voltage_angle_difference_ots(pm, nw, i, f_idx, buspair["angmin"], buspair["angmax"])
+    #end
+end
+function constraint_voltage_angle_difference_ots(pm::_PM.AbstractDCPModel, i::Int; nw::Int=_PM.nw_id_default)
     branch = _PM.ref(pm,nw,:branch,i)
     f_bus = branch["f_bus"]
     t_bus = branch["t_bus"]
@@ -116,6 +134,19 @@ function constraint_ohms_ots_dc_branch(pm::_PM.AbstractACPModel, i::Int; nw::Int
 
     constraint_ohms_ots_dc_branch(pm, nw, f_bus, t_bus, f_idx, t_idx, branch["r"], p)
 end
+
+function constraint_ohms_ots_dc_branch(pm::_PM.AbstractDCPModel, i::Int; nw::Int=_PM.nw_id_default)
+    branch = _PM.ref(pm,nw,:branchdc,i)
+    f_bus = branch["fbusdc"]
+    t_bus = branch["tbusdc"]
+    f_idx = (i, f_bus, t_bus)
+    t_idx = (i, t_bus, f_bus)
+
+    p = _PM.ref(pm, nw, :dcpol)
+
+    constraint_ohms_ots_dc_branch(pm, nw, f_bus, t_bus, f_idx, t_idx, branch["r"], p)
+end
+
 
 
 ## dc OTS

@@ -11,27 +11,23 @@ end
 function build_acdcsw_AC_DC(pm::_PM.AbstractPowerModel)
     _PM.variable_bus_voltage(pm)
     _PM.variable_gen_power(pm)
+    _PM.variable_branch_power(pm)
 
     _PM.variable_switch_indicator(pm)
     _PM.variable_switch_power(pm)
 
     variable_dc_switch_indicator(pm)
-
-    _PM.variable_branch_power(pm)
-    _PM.variable_dcline_power(pm)
-
     variable_dc_switch_power(pm)
 
     _PMACDC.variable_active_dcbranch_flow(pm)
     _PMACDC.variable_dcbranch_current(pm)
     _PMACDC.variable_dc_converter(pm)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
-    _PMACDC.constraint_voltage_dc(pm)
 
     _PM.objective_min_fuel_and_flow_cost(pm)
 
     _PM.constraint_model_voltage(pm)
-
+    _PMACDC.constraint_voltage_dc(pm)
 
     for i in _PM.ids(pm, :ref_buses)
         _PM.constraint_theta_ref(pm, i)

@@ -39,6 +39,7 @@ include("prob/acdcsw_AC_DC.jl")
 include("prob/ots_AC.jl")
 
 include("form/acp.jl")
+include("form/dcp.jl")
 include("form/shared.jl")
 
 
