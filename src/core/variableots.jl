@@ -107,9 +107,6 @@ function variable_dc_switch_test(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_d
     report && _IM.sol_component_value_edge(pm, _PM.pm_it_sym, nw, :branchdc, :pf, :pt, _PM.ref(pm, nw, :arcs_dcgrid_from), _PM.ref(pm, nw, :arcs_dcgrid_to), p_test)
 end
 
-
-
-
 function variable_active_dcbranch_flow(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=true)
     p = _PM.var(pm, nw)[:p_dcgrid] = JuMP.@variable(pm.model,
     [(l,i,j) in _PM.ref(pm, nw, :arcs_dcgrid)], base_name="$(nw)_pdcgrid",
@@ -126,10 +123,34 @@ function variable_active_dcbranch_flow(pm::_PM.AbstractPowerModel; nw::Int=_PM.n
 
     report && _IM.sol_component_value_edge(pm, _PM.pm_it_sym, nw, :branchdc, :pf, :pt, _PM.ref(pm, nw, :arcs_dcgrid_from), _PM.ref(pm, nw, :arcs_dcgrid_to), p)
 end
+#=
+function variable_branch_indicator_linear(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=true)
+    z_branch_linear = _PM.var(pm, nw)[:z_branch_linear] = JuMP.@variable(pm.model,
+            [l in _PM.ids(pm, nw, :branch)], base_name="$(nw)_z_branch_linear",
+            lower_bound = 0.0,
+            upper_bound = 1.0,
+            start = _PM.comp_start_value(_PM.ref(pm, nw, :branch, l), "z_branch_linear_start", 1.0)
+        )
+    report && _PM.sol_component_value(pm, nw, :branch, :br_status, _PM.ids(pm, nw, :branch), z_branch_linear)
+end
+=#
 
+function variable_branch_indicator_linear(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)
+    br = Dict()
+    for l in _PM.ids(pm, nw, :branch)
+        br[l] = _PM.ref(pm,nw,:branch,l)
+    end    
+    
+    z_branch = _PM.var(pm, nw)[:z_branch] = JuMP.@variable(pm.model,
+    [l in _PM.ids(pm, nw, :branch)], base_name="$(nw)_z_branch",
+    binary = false,
+    lower_bound = 0,
+    upper_bound = 1,
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :branch, l), "z_branch_start", br[l]["br_status_initial"])
+    )
 
-
-
+    report && _PM.sol_component_value(pm, nw, :branch, :br_status, _PM.ids(pm, nw, :branch), z_branch)
+end
 
 
 

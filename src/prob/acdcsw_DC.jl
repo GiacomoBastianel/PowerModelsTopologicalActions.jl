@@ -21,7 +21,7 @@ function build_acdcsw_DC(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dc_converter(pm)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
-    _PM.objective_min_fuel_and_flow_cost(pm)
+    _PM.objective_min_fuel_cost(pm)
 
     _PM.constraint_model_voltage(pm)
     _PMACDC.constraint_voltage_dc(pm)

@@ -1,6 +1,5 @@
 export run_acdcsw_AC
 
-
 # AC Busbar splitting for AC/DC grid
 "ACDC opf with controllable switches in AC busbar splitting configuration for AC/DC grids"
 function run_acdcsw_AC(file, model_constructor, optimizer; kwargs...)
@@ -24,7 +23,7 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
     # Objective function
-    _PM.objective_min_fuel_and_flow_cost(pm)
+    _PM.objective_min_fuel_cost(pm)
 
     # Constraints
     _PM.constraint_model_voltage(pm)
@@ -76,3 +75,4 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
         end
     end
 end
+

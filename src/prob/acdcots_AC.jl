@@ -1,5 +1,5 @@
 export run_acdcots_AC
-
+export run_acdcots_AC_NLP
 
 ## AC formulation of the AC/DC OTS with only AC branches that can be switched ##
 ""
@@ -16,7 +16,7 @@ end
 
 ""
 function build_acdcots_AC(pm::_PM.AbstractPowerModel)
-    _PM.variable_bus_voltage(pm)
+    _PM.variable_bus_voltage_on_off(pm)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
 
@@ -29,7 +29,7 @@ function build_acdcots_AC(pm::_PM.AbstractPowerModel)
 
     _PM.objective_min_fuel_cost(pm)
 
-    _PM.constraint_model_voltage(pm)
+    _PM.constraint_model_voltage_on_off(pm)
     _PMACDC.constraint_voltage_dc(pm)
 
     for i in _PM.ids(pm, :ref_buses)
@@ -41,6 +41,8 @@ function build_acdcots_AC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :branch)
+        #constraint_linearised_binary_variable(pm,i) # to be removed
+
         _PM.constraint_ohms_yt_from_on_off(pm, i)
         _PM.constraint_ohms_yt_to_on_off(pm, i)
 
@@ -70,40 +72,35 @@ end
 
 ## AC formulation of the AC/DC OTS with only AC branches that can be switched, SOC relaxation ##
 ""
-function run_acdcots_AC(file::String, model_type::Type, solver; kwargs...)
+function run_acdcots_AC_NLP(file::String, model_type::Type, solver; kwargs...)
     data = _PM.parse_file(file)
     _PMACDC.process_additional_data!(data)
-    return run_acdcots_AC(data, model_type, solver; ref_extensions = [_PMACDC.add_ref_dcgrid!], kwargs...)
+    return run_acdcots_AC_NLP(data, model_type, solver; ref_extensions = [_PMACDC.add_ref_dcgrid!], kwargs...)
 end
 
 ""
-function run_acdcots_AC(data::Dict{String,Any}, model_type::Type, solver; kwargs...)
-    return _PM.solve_model(data, model_type, solver, build_acdcots_AC; ref_extensions=[_PMACDC.add_ref_dcgrid!,_PM.ref_add_on_off_va_bounds!], kwargs...)
+function run_acdcots_AC_NLP(data::Dict{String,Any}, model_type::Type, solver; kwargs...)
+    return _PM.solve_model(data, model_type, solver, build_acdcots_AC_NLP; ref_extensions=[_PMACDC.add_ref_dcgrid!,_PM.ref_add_on_off_va_bounds!], kwargs...)
 end
 
 ""
-function build_acdcots_AC(pm::_PM.AbstractPowerModel)
-    # AC grid
+function build_acdcots_AC_NLP(pm::_PM.AbstractPowerModel)
     _PM.variable_bus_voltage_on_off(pm)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
-    _PM.variable_branch_indicator(pm)
 
-    #SOC part, QC -> do nothing, DC part are the same
-
-    # DC grid
     _PMACDC.variable_active_dcbranch_flow(pm)
     _PMACDC.variable_dcbranch_current(pm)
     _PMACDC.variable_dc_converter(pm)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
-  
-    # Objective function
+    _PM.variable_branch_indicator(pm,relax = true)
+    #variable_branch_indicator_linear(pm)
+
     _PM.objective_min_fuel_cost(pm)
 
-    # Constraints
     _PM.constraint_model_voltage_on_off(pm)
-    _PMACDC.constraint_voltage_dc(pm) # This differs depending on the formulation one chooses
+    _PMACDC.constraint_voltage_dc(pm)
 
     for i in _PM.ids(pm, :ref_buses)
         _PM.constraint_theta_ref(pm, i)
@@ -114,9 +111,13 @@ function build_acdcots_AC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :branch)
+        constraint_linearised_binary_variable(pm,i)
+        
         _PM.constraint_ohms_yt_from_on_off(pm, i)
         _PM.constraint_ohms_yt_to_on_off(pm, i)
+
         _PM.constraint_voltage_angle_difference_on_off(pm,i)
+
         _PM.constraint_thermal_limit_from_on_off(pm,i)
         _PM.constraint_thermal_limit_to_on_off(pm,i)
     end
@@ -125,12 +126,10 @@ function build_acdcots_AC(pm::_PM.AbstractPowerModel)
     end
     for i in _PM.ids(pm, :branchdc)
         _PMACDC.constraint_ohms_dc_branch(pm, i)
-        _PMACDC.constraint_dc_branch_current(pm,i)
     end
     for i in _PM.ids(pm, :convdc)
-        #_PMACDC.constraint_voltage_product_converter(pm,i)
         _PMACDC.constraint_converter_losses(pm, i)
-        _PMACDC.constraint_converter_current(pm, i) # This differs depending on the formulation one chooses
+        _PMACDC.constraint_converter_current(pm, i)
         _PMACDC.constraint_conv_transformer(pm, i)
         _PMACDC.constraint_conv_reactor(pm, i)
         _PMACDC.constraint_conv_filter(pm, i)

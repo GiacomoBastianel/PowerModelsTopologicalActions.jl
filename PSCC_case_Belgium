@@ -1,0 +1,203 @@
+using PowerModels; const _PM = PowerModels
+using Ipopt, JuMP
+using HiGHS, Gurobi, Juniper
+using PowerModelsACDC; const _PMACDC = PowerModelsACDC
+import PowerModelsTopologicalActionsII; const _PMTP = PowerModelsTopologicalActionsII
+using PowerModelsTopologicalActionsII   
+using InfrastructureModels; const _IM = InfrastructureModels
+using JSON
+
+#######################################################################################
+## Define solver ##
+#######################################################################################
+
+ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
+highs = JuMP.optimizer_with_attributes(HiGHS.Optimizer)
+gurobi = JuMP.optimizer_with_attributes(Gurobi.Optimizer)
+juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt, "mip_solver" => gurobi, "time_limit" => 36000)
+
+#######################################################################################
+## Input data ##
+#######################################################################################
+
+test_case = "case5.m"
+test_case_sw = "case5_sw.m"
+test_case_5_acdc = "case5_acdc.m"
+#test_case_5_acdc = "case39_acdc.m"
+Belgium = "BE_grid_with_energy_island.json"
+
+#######################################################################################
+## Parsing input data ##
+#######################################################################################
+
+s_dual = Dict("output" => Dict("branch_flows" => true,"duals" => true), "conv_losses_mp" => true)
+s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => true)
+
+data_file_5_acdc = joinpath(@__DIR__,"data_sources",test_case_5_acdc)
+data_original_5_acdc = _PM.parse_file(data_file_5_acdc)
+data_5_acdc = deepcopy(data_original_5_acdc)
+_PMACDC.process_additional_data!(data_5_acdc)
+
+for (l_id,l) in data_5_acdc["load"]
+    if l_id != "4"
+        l["pd"] = 0
+        l["qd"] = 0
+    else
+        l["pd"] = l["pd"]*3
+        l["qd"] = l["qd"]*3
+    end
+end
+#for (l_id,l) in data_5_acdc["branch"]
+#    l["rate_a"] = 0.8
+#end
+
+#######################################################################################
+## Optimal transmission switching models ##
+#######################################################################################
+# AC OPF for ACDC grid
+result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s_dual)
+#=
+data_Belgium_file = joinpath(@__DIR__,"data_sources",Belgium)
+Belgium_grid = _PM.parse_file(data_Belgium_file)
+delete!(Belgium_grid,"interconnectors")
+for (l_id,l) in Belgium_grid["load"]
+    l["qd"] = l["pd"]/10
+end
+#for (br_id,br) in Belgium_grid["branch"]
+#    br["rate_a"] = 99.99
+#end   
+#for (br_id,br) in Belgium_grid["branchdc"]
+#    br["rateA"] = 99.99
+#end   
+for (br_id,br) in Belgium_grid["convdc"]
+    #br["Qacmin"] = - 99.99
+    #br["Qacmax"] =  99.99
+    #br["Qacrated"] =  99.99
+    #br["Pacmin"] = - 99.99
+    #br["Pacmax"] =  99.99
+    #br["Pacrated"] =  99.99
+    br["Imax"] = 3.50
+end   
+
+#for (l_id,l) in Belgium_grid["gen"]
+#    l["qmax"] = l["qmax"]*100
+#end
+
+
+result_opf_BE_dc = _PMACDC.run_acdcopf(Belgium_grid,DCPPowerModel,ipopt; setting = s_dual)
+result_opf_BE_ac = _PMACDC.run_acdcopf(Belgium_grid,ACPPowerModel,ipopt; setting = s_dual)
+result_AC_ots_BE    = _PMTP.run_acdcots_AC(Belgium_grid,ACPPowerModel,juniper; setting = s)
+result_AC_ots_BE    = _PMTP.run_acdcots_AC_NLP(Belgium_grid,ACPPowerModel,juniper; setting = s)
+result_AC_ots_BE    = _PMTP.run_acdcots_AC(Belgium_grid,QCRMPowerModel,juniper; setting = s)
+=#
+
+
+# Solving AC OTS with OTS only on the AC grid part
+result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+
+#result_AC_ots_5_NLP    = _PMTP.run_acdcots_AC_NLP(data_5_acdc,ACPPowerModel,juniper; setting = s)
+
+#result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+
+#=
+for (br_id,br) in result_opf_5_ac["solution"]["branch"]
+    print(br["pt"],"\n")
+end
+for (br_id,br) in result_AC_DC_ots_5["solution"]["branch"]
+    print([br["pt"],br_id],"\n")
+end
+
+
+
+
+# Solving AC OTS with OTS only on the DC grid part 
+result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+#result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,SOCWRPowerModel,juniper)
+
+# Solving AC OTS with OTS on both AC and DC grid part
+result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+=#
+
+for (br_id,br) in result_AC_ots_BE["solution"]["branch"]
+    #if br["br_status"] <= 0.5
+        print([br_id,br["br_status"]],"\n")
+    #end
+end
+for (br_id,br) in result_AC_ots_5_NLP["solution"]["branch"]
+    #if br["br_status"] <= 0.5
+    print(br["br_status"],"\n")
+    #end
+end
+for (br_id,br) in result_AC_DC_ots_5["solution"]["branch"]
+    #if br["br_status"] <= 0.5
+        print(br["br_status"],"\n")
+    #end
+end
+
+
+
+#######################################################################################
+## Busbar splitting models ##
+#######################################################################################
+# AC BS for AC/DC grid with AC switches state as decision variable
+data_busbars_ac_split_5_acdc = deepcopy(data_5_acdc)
+splitted_bus_ac = [1,2,3,4,5]
+#splitted_bus_ac = [4,5]
+splitted_bus_ac = [2,4]
+#splitted_bus_ac = 4
+
+#splitted_bus_ac = 1
+data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
+result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper)
+
+result_AC_DC_5_switches_AC_no_excl  = _PMTP.run_acdcsw_AC_no_exclusivity(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# AC OTS for AC/DC grid with DC switches state as decision variable
+data_busbars_dc_split_5_acdc = deepcopy(data_5_acdc)
+splitted_bus_dc = [1,2,3]
+data_busbars_dc_split_5_acdc , switches_couples_dc_5,  extremes_ZILs_5_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_dc_split_5_acdc,splitted_bus_dc)
+result_AC_DC_5_switches_DC  = _PMTP.run_acdcsw_DC(data_busbars_dc_split_5_acdc, ACPPowerModel,juniper)
+
+
+# AC OTS for AC/DC grid with AC and DC switches state as decision variable
+data_busbars_ac_dc_split_5_acdc = deepcopy(data_5_acdc)
+splitted_bus_ac = [2,4]
+splitted_bus_dc = [1,2,3]
+
+data_busbars_ac_dc_split_5_acdc_ac_sw,  switches_couples_ac_dc_5,  extremes_ZILs_5_ac_dc  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc,splitted_bus_ac)
+data_busbars_ac_dc_split_5_acdc_ac_dc_sw , switches_couples_ac_dc_5,  extremes_ZILs_5_ac_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc_ac_sw,splitted_bus_dc)
+
+result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_5_acdc, ACPPowerModel,juniper)
+
+#result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_5_acdc, ACPPowerModel,juniper)
+
+##
+count_ = 0
+count_no = 0
+for (br_id,br) in result_AC_DC_5_switches_AC["solution"]["switch"]
+    if br["status"] >= 0.5
+        count_ += 1
+        print([br["status"],br_id],"\n")
+    else
+        count_no += 1
+    end
+end

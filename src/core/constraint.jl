@@ -88,20 +88,25 @@ function constraint_branch_limit_on_off_dc_ots(pm::_PM.AbstractPowerModel, n::In
     JuMP.@constraint(pm.model,  p_to >= pmin * z)
 end
 
+function constraint_linearised_binary_variable(pm::_PM.AbstractPowerModel, n::Int, i, csi)
+    z = _PM.var(pm, n, :z_branch, i)
+    JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+end
+
 ###################### Busbar Splitting Constraints ############################
 
 function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2)
     z_1 = _PM.var(pm, n, :z_switch, i_1)
     z_2 = _PM.var(pm, n, :z_switch, i_2)
  
-    JuMP.@constraint(pm.model, z_1 + z_2 == 1.0)
+    JuMP.@constraint(pm.model, z_1 + z_2 <= 1.0)
 end
 
 function constraint_exclusivity_dc_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2)
     z_1 = _PM.var(pm, n, :z_dcswitch, i_1)
     z_2 = _PM.var(pm, n, :z_dcswitch, i_2)
  
-    JuMP.@constraint(pm.model, z_1 + z_2 == 1.0)
+    JuMP.@constraint(pm.model, z_1 + z_2 <= 1.0)
 end
 
 function constraint_power_balance_dc_switch(pm::_PM.AbstractPowerModel, n::Int, i::Int, bus_arcs_dcgrid, bus_convs_dc, bus_arcs_sw_dc, pd)

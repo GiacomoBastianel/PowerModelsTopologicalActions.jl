@@ -147,7 +147,10 @@ function constraint_ohms_ots_dc_branch(pm::_PM.AbstractDCPModel, i::Int; nw::Int
     constraint_ohms_ots_dc_branch(pm, nw, f_bus, t_bus, f_idx, t_idx, branch["r"], p)
 end
 
-
+function constraint_linearised_binary_variable(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    csi = 10^-6
+    constraint_linearised_binary_variable(pm, nw, i, csi)
+end
 
 ## dc OTS
 function constraint_converter_losses_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
