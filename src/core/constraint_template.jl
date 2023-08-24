@@ -223,8 +223,27 @@ end
 # Busbar splitting
 function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch_couple = _PM.ref(pm, nw, :switch_couples, i)
+    #constraint_exclusivity_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"],switch_couple["bus_split"])
     constraint_exclusivity_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"])
 end
+
+function constraint_exclusivity_switch_no_OTS(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_couple = _PM.ref(pm, nw, :switch_couples, i)
+    constraint_exclusivity_switch_no_OTS(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"], switch_couple["bus_split"])
+end
+
+function constraint_voltage_angles_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_couple = _PM.ref(pm, nw, :switch_couples, i)
+    switch_from = _PM.ref(pm, nw, :switch, switch_couple["f_sw"])
+    switch_to = _PM.ref(pm, nw, :switch, switch_couple["f_sw"])
+    #switch = _PM.ref(pm, nw, :switch)
+
+    bus_1_ = switch_from["f_bus"]
+    bus_2_ = switch_to["t_bus"]
+
+    constraint_voltage_angles_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"],switch_couple["switch_split"],bus_1_,bus_2_)
+end
+
 
 function constraint_exclusivity_dc_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch_couple = _PM.ref(pm, nw, :dcswitch_couples, i)

@@ -91,6 +91,8 @@ end
 #######################################################################################
 # AC BS for AC/DC grid with AC switches state as decision variable
 data_busbars_ac_split_5_acdc = deepcopy(data_5_acdc)
+data_busbars_ac_split_5_acdc_no_OTS = deepcopy(data_5_acdc)
+
 #splitted_bus_ac = [1,2,3,4,5]
 #splitted_bus_ac = [4,5]
 splitted_bus_ac = [2,4]
@@ -100,7 +102,10 @@ splitted_bus_ac = [2,4]
 data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
 result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper)
 
+data_busbars_ac_split_5_acdc_no_OTS,  switches_couples_ac_5_no_OTS,  extremes_ZILs_5_ac_no_OTS  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc_no_OTS,splitted_bus_ac)
+result_AC_DC_5_switches_AC_no_OTS  = _PMTP.run_acdcsw_AC_no_OTS(data_busbars_ac_split_5_acdc_no_OTS,ACPPowerModel,juniper)
 
+#=
 # AC OTS for AC/DC grid with DC switches state as decision variable
 data_busbars_dc_split_5_acdc = deepcopy(data_5_acdc)
 splitted_bus_dc = [1,2,3]
@@ -111,47 +116,52 @@ result_AC_DC_5_switches_DC  = _PMTP.run_acdcsw_DC(data_busbars_dc_split_5_acdc, 
 # AC OTS for AC/DC grid with AC and DC switches state as decision variable
 data_busbars_ac_dc_split_5_acdc = deepcopy(data_5_acdc)
 splitted_bus_ac = [2,4]
-splitted_bus_dc = [1,2,3]
+splitted_bus_dc = 1
 
-splitted_bus_dc = 1 # With this configuration it works!
+#splitted_bus_dc = 1 # With this configuration it works!
 #splitted_bus_dc = 2
 
 data_busbars_ac_dc_split_5_acdc_ac_sw,  ac_switches_couples_ac_dc_5, ac_extremes_ZILs_5_ac_dc  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc,splitted_bus_ac)
 data_busbars_ac_dc_split_5_acdc_ac_dc_sw , dc_switches_couples_ac_dc_5, dc_extremes_ZILs_5_ac_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc_ac_sw,splitted_bus_dc)
 
 result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_5_acdc, ACPPowerModel,juniper)
+=#
 
 
 ac_branches_power_flow = Dict{String,Any}()
 for (br_id,br) in data_5_acdc["branch"]
     ac_branches_power_flow[br_id] = Dict{String,Any}()
     ac_branches_power_flow[br_id]["OPF"] = result_opf_5_ac["solution"]["branch"][br_id]["pt"]
-    ac_branches_power_flow[br_id]["OTS"] = result_AC_DC_ots_5["solution"]["branch"][br_id]["pt"]
-    ac_branches_power_flow[br_id]["BS"] = result_AC_DC_5_switch_AC_DC["solution"]["branch"][br_id]["pt"]
+    ac_branches_power_flow[br_id]["OTS"] = result_AC_ots_5["solution"]["branch"][br_id]["pt"]
+    ac_branches_power_flow[br_id]["BS"] = result_AC_DC_5_switches_AC["solution"]["branch"][br_id]["pt"]
+    ac_branches_power_flow[br_id]["BS_NO_OTS"] = result_AC_DC_5_switches_AC_no_OTS["solution"]["branch"][br_id]["pt"]
 end
 
 dc_branches_power_flow = Dict{String,Any}()
 for (br_id,br) in data_5_acdc["branchdc"]
     dc_branches_power_flow[br_id] = Dict{String,Any}()
     dc_branches_power_flow[br_id]["OPF"] = result_opf_5_ac["solution"]["branchdc"][br_id]["pt"]
-    dc_branches_power_flow[br_id]["OTS"] = result_AC_DC_ots_5["solution"]["branchdc"][br_id]["pt"]
-    dc_branches_power_flow[br_id]["BS"] = result_AC_DC_5_switch_AC_DC["solution"]["branchdc"][br_id]["pt"]
+    dc_branches_power_flow[br_id]["OTS"] = result_AC_ots_5["solution"]["branchdc"][br_id]["pt"]
+    dc_branches_power_flow[br_id]["BS"] = result_AC_DC_5_switches_AC["solution"]["branchdc"][br_id]["pt"]
+    dc_branches_power_flow[br_id]["BS_NO_OTS"] = result_AC_DC_5_switches_AC_no_OTS["solution"]["branchdc"][br_id]["pt"]    
 end
 
 pg_gen = Dict{String,Any}()
 for (br_id,br) in data_5_acdc["gen"]
     pg_gen[br_id] = Dict{String,Any}()
     pg_gen[br_id]["OPF"] = result_opf_5_ac["solution"]["gen"][br_id]["pg"]
-    pg_gen[br_id]["OTS"] = result_AC_DC_ots_5["solution"]["gen"][br_id]["pg"]
-    pg_gen[br_id]["BS"] = result_AC_DC_5_switch_AC_DC["solution"]["gen"][br_id]["pg"]
+    pg_gen[br_id]["OTS"] = result_AC_ots_5["solution"]["gen"][br_id]["pg"]
+    pg_gen[br_id]["BS"] = result_AC_DC_5_switches_AC["solution"]["gen"][br_id]["pg"]
+    pg_gen[br_id]["BS_NO_OTS"] = result_AC_DC_5_switches_AC_no_OTS["solution"]["gen"][br_id]["pg"]
 end
 
 qg_gen = Dict{String,Any}()
 for (br_id,br) in data_5_acdc["gen"]
     qg_gen[br_id] = Dict{String,Any}()
     qg_gen[br_id]["OPF"] = result_opf_5_ac["solution"]["gen"][br_id]["qg"]
-    qg_gen[br_id]["OTS"] = result_AC_DC_ots_5["solution"]["gen"][br_id]["qg"]
-    qg_gen[br_id]["BS"] = result_AC_DC_5_switch_AC_DC["solution"]["gen"][br_id]["qg"]
+    qg_gen[br_id]["OTS"] = result_AC_ots_5["solution"]["gen"][br_id]["qg"]
+    qg_gen[br_id]["BS"] = result_AC_DC_5_switches_AC["solution"]["gen"][br_id]["qg"]
+    qg_gen[br_id]["BS_NO_OTS"] = result_AC_DC_5_switches_AC_no_OTS["solution"]["gen"][br_id]["qg"]
 end
 
 branches_ots = Dict{String,Any}()
@@ -159,36 +169,104 @@ for (br_id,br) in data_5_acdc["branch"]
     branches_ots[br_id] = Dict{String,Any}()
     branches_ots[br_id]["f_bus"] = br["f_bus"]
     branches_ots[br_id]["t_bus"] = br["t_bus"]
-    branches_ots[br_id]["status"] = result_AC_DC_ots_5["solution"]["branch"][br_id]["br_status"]
+    branches_ots[br_id]["status"] = result_AC_ots_5["solution"]["branch"][br_id]["br_status"]
+    branches_ots[br_id]["status"] = result_AC_ots_5["solution"]["branch"][br_id]["br_status"]
+end
+
+voltage_angles = Dict{String,Any}()
+for (br_id,br) in data_5_acdc["bus"]
+    voltage_angles[br_id] = Dict{String,Any}()
+    voltage_angles[br_id]["OPF"] = result_opf_5_ac["solution"]["bus"][br_id]["va"]
+    voltage_angles[br_id]["OTS"] = result_AC_ots_5["solution"]["bus"][br_id]["va"]
+    voltage_angles[br_id]["BS"] = result_AC_DC_5_switches_AC["solution"]["bus"][br_id]["va"]
+    voltage_angles[br_id]["BS_NO_OTS"] = result_AC_DC_5_switches_AC_no_OTS["solution"]["bus"][br_id]["va"]
+end
+
+voltage_magnitudes = Dict{String,Any}()
+for (br_id,br) in data_5_acdc["bus"]
+    voltage_magnitudes[br_id] = Dict{String,Any}()
+    voltage_magnitudes[br_id]["OPF"] = result_opf_5_ac["solution"]["bus"][br_id]["vm"]
+    voltage_magnitudes[br_id]["OTS"] = result_AC_ots_5["solution"]["bus"][br_id]["vm"]
+    voltage_magnitudes[br_id]["BS"] = result_AC_DC_5_switches_AC["solution"]["bus"][br_id]["vm"]
+    voltage_magnitudes[br_id]["BS_NO_OTS"] = result_AC_DC_5_switches_AC_no_OTS["solution"]["bus"][br_id]["vm"]
+end
+
+for (br_id,br) in result_AC_DC_5_switches_AC["solution"]["bus"]
+    print([br_id,br["vm"],br["va"]],"\n")
 end
 
 switches = Dict{String,Any}()
-for (br_id,br) in data_busbars_ac_dc_split_5_acdc_ac_dc_sw["switch"]
+for (br_id,br) in data_busbars_ac_split_5_acdc["switch"]
     switches[br_id] = Dict{String,Any}()
     switches[br_id]["f_bus"] = br["f_bus"]
     switches[br_id]["t_bus"] = br["t_bus"]
     if haskey(br,"original")
         switches[br_id]["original"] = br["original"]
     else
-        switches[br_id]["original"] = 0
+        switches[br_id]["original"] = false
     end
     if haskey(br,"auxiliary")
         switches[br_id]["auxiliary"] = br["auxiliary"]
     else
-        switches[br_id]["auxiliary"] = 0
+        switches[br_id]["auxiliary"] = false
     end
-    if haskey(data_busbars_ac_dc_split_5_acdc_ac_dc_sw["switch_couples"],br_id)
-        switches[br_id]["switch_couple"] = data_busbars_ac_dc_split_5_acdc_ac_dc_sw["switch_couples"][br_id]
+    if haskey(br,"bus_split")
+        switches[br_id]["bus_split"] = br["bus_split"]
+    else
+        switches[br_id]["bus_split"] = false
+    end
+    if haskey(data_busbars_ac_split_5_acdc["switch_couples"],br_id)
+        switches[br_id]["switch_couple"] = data_busbars_ac_split_5_acdc["switch_couples"][br_id]
     else
         switches[br_id]["switch_couple"] = false
     end
-    switches[br_id]["status"] = result_AC_DC_5_switch_AC_DC["solution"]["switch"][br_id]["status"]
+    switches[br_id]["status"] = result_AC_DC_5_switches_AC["solution"]["switch"][br_id]["status"]
 end
-switches["3"]
-switches["4"]
+
+switches_no_OTS = Dict{String,Any}()
+for (br_id,br) in data_busbars_ac_split_5_acdc_no_OTS["switch"]
+    switches_no_OTS[br_id] = Dict{String,Any}()
+    switches_no_OTS[br_id]["f_bus"] = br["f_bus"]
+    switches_no_OTS[br_id]["t_bus"] = br["t_bus"]
+    if haskey(br,"original")
+        switches_no_OTS[br_id]["original"] = br["original"]
+    else
+        switches_no_OTS[br_id]["original"] = false
+    end
+    if haskey(br,"auxiliary")
+        switches_no_OTS[br_id]["auxiliary"] = br["auxiliary"]
+    else
+        switches_no_OTS[br_id]["auxiliary"] = false
+    end
+    if haskey(br,"bus_split")
+        switches_no_OTS[br_id]["bus_split"] = br["bus_split"]
+    else
+        switches_no_OTS[br_id]["bus_split"] = false
+    end
+    if haskey(data_busbars_ac_split_5_acdc_no_OTS["switch_couples"],br_id)
+        switches_no_OTS[br_id]["switch_couple"] = data_busbars_ac_split_5_acdc_no_OTS["switch_couples"][br_id]
+    else
+        switches_no_OTS[br_id]["switch_couple"] = false
+    end
+    switches_no_OTS[br_id]["status"] = result_AC_DC_5_switches_AC_no_OTS["solution"]["switch"][br_id]["status"]
+end
+
+v_as = [[i,result_AC_DC_5_switches_AC["solution"]["bus"][i]["va"]] for i in eachindex(result_AC_DC_5_switches_AC["solution"]["bus"])]
+v_as_no_OTS = [[i,result_AC_DC_5_switches_AC_no_OTS["solution"]["bus"][i]["va"]] for i in eachindex(result_AC_DC_5_switches_AC_no_OTS["solution"]["bus"])]
 
 
-data_busbars_ac_dc_split_5_acdc_ac_dc_sw["switch"]["3"]
-data_busbars_ac_dc_split_5_acdc_ac_dc_sw["switch"]["4"]
-data_busbars_ac_dc_split_5_acdc_ac_dc_sw["switch"]["5"]
-data_busbars_ac_dc_split_5_acdc_ac_dc_sw["switch"]["6"]
+
+switches = [[i,result_AC_DC_5_switches_AC["solution"]["switch"][i]["status"]] for i in eachindex(result_AC_DC_5_switches_AC["solution"]["switch"])]
+switches_no_OTS = [[i,result_AC_DC_5_switches_AC_no_OTS["solution"]["switch"][i]["status"]] for i in eachindex(result_AC_DC_5_switches_AC_no_OTS["solution"]["switch"])]
+
+
+
+
+branches = Dict{String,Any}()
+for (br_id,br) in data_5_acdc["branch"]
+    branches[br_id] = Dict{String,Any}()
+    branches[br_id]["f_bus"] = br["f_bus"]
+    branches[br_id]["t_bus"] = br["t_bus"]
+end
+
+

@@ -95,11 +95,43 @@ end
 
 ###################### Busbar Splitting Constraints ############################
 
+#function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2, i_3)
 function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2)
     z_1 = _PM.var(pm, n, :z_switch, i_1)
     z_2 = _PM.var(pm, n, :z_switch, i_2)
- 
+    #z_ZIL = _PM.var(pm, n, :z_switch, i_3)
+    
+    #JuMP.@constraint(pm.model, z_1 + z_2 + z_ZIL == 2.0)
     JuMP.@constraint(pm.model, z_1 + z_2 <= 1.0)
+    #end
+end
+
+function constraint_exclusivity_switch_no_OTS(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2, i_3)
+    z_1 = _PM.var(pm, n, :z_switch, i_1)
+    z_2 = _PM.var(pm, n, :z_switch, i_2)
+    z_ZIL = _PM.var(pm, n, :z_switch, i_3)
+    
+    if z_ZIL == 1.0
+        JuMP.@constraint(pm.model, z_1 == 1.0)
+        JuMP.@constraint(pm.model, z_2 == 0.0)
+    else    
+        JuMP.@constraint(pm.model, z_1 + z_2 == 1.0)
+    end
+end
+
+function constraint_voltage_angles_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2, i_3, bus_1, bus_2)
+    z_1 = _PM.var(pm, n, :z_switch, i_1)
+    z_2 = _PM.var(pm, n, :z_switch, i_2)
+    z_ZIL = _PM.var(pm, n, :z_switch, i_3)
+    va_1 = _PM.var(pm, n, :va, bus_1)
+    vm_1 = _PM.var(pm, n, :vm, bus_1)
+    va_2 = _PM.var(pm, n, :va, bus_2)
+    vm_2 = _PM.var(pm, n, :vm, bus_2)
+    
+    if z_ZIL == 1.0
+        JuMP.@constraint(pm.model, va_1 == va_2)
+        JuMP.@constraint(pm.model, vm_1 == vm_2)
+    end
 end
 
 function constraint_exclusivity_dc_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2)

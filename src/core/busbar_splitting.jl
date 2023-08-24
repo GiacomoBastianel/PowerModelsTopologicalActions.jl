@@ -208,15 +208,25 @@ end
 # Stating the from and to bus of every AC switch
 function compute_couples_of_switches(data)
     switch_couples = Dict{String,Any}()
+    t_sws = []
     for (sw_id,sw) in data["switch"]
         for l in keys(data["switch"])
-            if (haskey(sw, "auxiliary") && haskey(data["switch"][l], "auxiliary")) && (sw["original"] == data["switch"][l]["original"]) && (sw["index"] != data["switch"][l]["index"]) && (sw["bus_split"] == data["switch"][l]["bus_split"])
-                switch_couples["$sw_id"] = Dict{String,Any}()
-                switch_couples["$sw_id"]["f_sw"] = sw["index"]
-                switch_couples["$sw_id"]["t_sw"] = data["switch"][l]["index"]
+            if (haskey(sw, "auxiliary") && haskey(data["switch"][l], "auxiliary")) && (sw["auxiliary"] == data["switch"][l]["auxiliary"]) && (sw["original"] == data["switch"][l]["original"]) && (sw["index"] != data["switch"][l]["index"]) && (sw["bus_split"] == data["switch"][l]["bus_split"])
+                if !issubset(sw["index"],t_sws) 
+                    switch_couples["$sw_id"] = Dict{String,Any}()
+                    switch_couples["$sw_id"]["f_sw"] = sw["index"]
+                    switch_couples["$sw_id"]["t_sw"] = data["switch"][l]["index"]
+                    switch_couples["$sw_id"]["bus_split"] = data["switch"][l]["bus_split"]
+                    for (s_id,s) in data["switch"] 
+                        if !(haskey(s, "auxiliary")) && haskey(s,"ZIL") && s["bus_split"] == switch_couples["$sw_id"]["bus_split"]
+                            switch_couples["$sw_id"]["switch_split"] = deepcopy(s["index"])
+                        end
+                    end
+                    push!(t_sws,switch_couples["$sw_id"]["t_sw"])
+                end
             end
         end
-    end
+    end 
     return switch_couples
 end
 
