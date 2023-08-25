@@ -134,12 +134,40 @@ function constraint_voltage_angles_switch(pm::_PM.AbstractPowerModel, n::Int, i_
     end
 end
 
+function constraint_voltage_angles_dc_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2, i_3, bus_1, bus_2)
+    z_1 = _PM.var(pm, n, :z_dcswitch, i_1)
+    z_2 = _PM.var(pm, n, :z_dcswitch, i_2)
+    z_ZIL = _PM.var(pm, n, :z_dcswitch, i_3)
+    vm_1 = _PM.var(pm, n, :vdcm, bus_1)
+    vm_2 = _PM.var(pm, n, :vdcm, bus_2)
+    
+    if z_ZIL == 1.0
+        JuMP.@constraint(pm.model, vm_1 == vm_2)
+    end
+end
+
+
+
 function constraint_exclusivity_dc_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2)
     z_1 = _PM.var(pm, n, :z_dcswitch, i_1)
     z_2 = _PM.var(pm, n, :z_dcswitch, i_2)
  
     JuMP.@constraint(pm.model, z_1 + z_2 <= 1.0)
 end
+
+function constraint_exclusivity_dc_switch_no_OTS(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2, i_3)
+    z_1 = _PM.var(pm, n, :z_dcswitch, i_1)
+    z_2 = _PM.var(pm, n, :z_dcswitch, i_2)
+    z_ZIL = _PM.var(pm, n, :z_dcswitch, i_3)
+    
+    if z_ZIL == 1.0
+        JuMP.@constraint(pm.model, z_1 == 1.0)
+        JuMP.@constraint(pm.model, z_2 == 0.0)
+    else    
+        JuMP.@constraint(pm.model, z_1 + z_2 == 1.0)
+    end
+end
+
 
 function constraint_power_balance_dc_switch(pm::_PM.AbstractPowerModel, n::Int, i::Int, bus_arcs_dcgrid, bus_convs_dc, bus_arcs_sw_dc, pd)
     p_dcgrid = _PM.var(pm, n, :p_dcgrid)
