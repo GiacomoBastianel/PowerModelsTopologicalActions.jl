@@ -15,6 +15,22 @@ function constraint_ohms_ots_dc_branch(pm::_PM.AbstractACPModel, n::Int, f_bus, 
     end
 end
 
+function constraint_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus, vad_min, vad_max)
+    vm_fr = _PM.var(pm, n, :vm, f_bus)
+    vm_to = _PM.var(pm, n, :vm, t_bus)
+    va_fr = _PM.var(pm, n, :va, f_bus)
+    va_to = _PM.var(pm, n, :va, t_bus)
+    z = _PM.var(pm, n, :z_switch, i)
+
+    JuMP.@constraint(pm.model, z*vm_fr == z*vm_to)
+    JuMP.@constraint(pm.model, z*va_fr == z*va_to)
+
+    #JuMP.@constraint(pm.model, (vm_fr - vm_to) <= 100*(1 - z))
+    #JuMP.@constraint(pm.model, (va_fr - va_to) <= 100*(1 - z))
+    #JuMP.@constraint(pm.model, - 100*(1 - z) <= (vm_fr - vm_to))
+    #JuMP.@constraint(pm.model, - 100*(1 - z) <= (va_fr - va_to))
+end
+
 function constraint_dc_switch_state_closed(pm::_PM.AbstractACPModel, n::Int, f_busdc, t_busdc)
     vm_fr = _PM.var(pm, n, :vdcm, f_busdc)
     vm_to = _PM.var(pm, n, :vdcm, t_busdc)
@@ -22,7 +38,7 @@ function constraint_dc_switch_state_closed(pm::_PM.AbstractACPModel, n::Int, f_b
     JuMP.@constraint(pm.model, vm_fr == vm_to)
 end
 
-function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i, f_busdc, t_busdc, vad_min, vad_max)
+function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i, f_busdc, t_busdc)
     vm_fr = _PM.var(pm, n, :vdcm, f_busdc)
     vm_to = _PM.var(pm, n, :vdcm, t_busdc)
     z = _PM.var(pm, n, :z_dcswitch, i)
@@ -86,7 +102,7 @@ function constraint_converter_losses_dc_ots(pm::_PM.AbstractACPModel, n::Int, i:
     iconv = _PM.var(pm, n, :iconv_ac, i)
     z_DC = _PM.var(pm, n, :z_conv_dc, i)
 
-    JuMP.@NLconstraint(pm.model, z_DC*pconv_ac + z_DC*pconv_dc == z_DC*(a + b*iconv + c*iconv^2))
+    JuMP.@NLconstraint(pm.model, pconv_ac + pconv_dc == z_DC*(a + b*iconv + c*iconv^2))
 end
 
 function constraint_conv_reactor_dc_ots(pm::_PM.AbstractACPModel, n::Int, i::Int, rc, xc, reactor)
@@ -137,7 +153,7 @@ function constraint_converter_current_dc_ots(pm::_PM.AbstractACPModel, n::Int, i
     iconv = _PM.var(pm, n, :iconv_ac, i)
     z_dc = _PM.var(pm, n, :z_conv_dc, i)
 
-    JuMP.@NLconstraint(pm.model, z_dc*pconv_ac^2 + z_dc*qconv_ac^2 == z_dc * vmc^2 * iconv^2)
+    JuMP.@NLconstraint(pm.model, pconv_ac^2 + qconv_ac^2 == z_dc * vmc^2 * iconv^2)
 end
 
 ## ACDC switch
@@ -151,7 +167,34 @@ function constraint_power_balance_ac_switch(pm::_PM.AbstractACPModel, n::Int, i:
     qconv_grid_ac = _PM.var(pm, n,  :qconv_tf_fr)
     psw  = _PM.var(pm, n, :psw)
     qsw  = _PM.var(pm, n, :qsw)
-
+    #=
+    print("pm")
+    print("\n")
+    print(_PM.var(pm, n,  :p))
+    print("Bus $i")
+    print("\n")
+    print("bus_arcs_sw")
+    print("\n")
+    print(bus_arcs_sw)
+    print("\n")
+    print("bus_convs_ac")
+    print("\n")
+    print(bus_convs_ac)
+    print("\n")
+    print("bus_arcs")
+    print("\n")
+    print(bus_arcs)
+    print("\n")
+    print("bus_gens")
+    print("\n")
+    print(bus_gens)
+    print("\n")
+    print("bus_loads")
+    print("\n")
+    print(bus_loads)
+    print("\n")
+    print("\n")
+    =#
     cstr_p = JuMP.@NLconstraint(pm.model, sum(p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(psw[sw] for sw in bus_arcs_sw) == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*vm^2)
     cstr_q = JuMP.@NLconstraint(pm.model, sum(q[a] for a in bus_arcs) + sum(qconv_grid_ac[c] for c in bus_convs_ac) + sum(qsw[sw] for sw in bus_arcs_sw) == sum(qg[g] for g in bus_gens)  - sum(qd[d] for d in bus_loads) + sum(bs[s] for s in bus_shunts)*vm^2)
 

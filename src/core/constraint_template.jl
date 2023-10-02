@@ -13,26 +13,19 @@ function constraint_dc_switch_state(pm::_PM.AbstractPowerModel, i::Int; nw::Int=
 end
 
 "enforces controlable switch constraints"
-function constraint_dc_switch_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
-    switch = _PM.ref(pm, nw, :dcswitch, i)
-
-    f_idx = (i, switch["f_busdc"], switch["t_busdc"])
-    vad_min = _PM.ref(pm, nw, :off_angmin)
-    vad_max = _PM.ref(pm, nw, :off_angmax)
-
-    constraint_dc_switch_power_on_off(pm, nw, i, f_idx)
-    constraint_dc_switch_voltage_on_off(pm, nw, i, switch["f_busdc"], switch["t_busdc"], vad_min, vad_max)
-end
+#function constraint_dc_switch_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+#    switch = _PM.ref(pm, nw, :dcswitch, i)
+#
+#    f_idx = (i, switch["f_busdc"], switch["t_busdc"])
+#    vad_min = _PM.ref(pm, nw, :off_angmin)
+#    vad_max = _PM.ref(pm, nw, :off_angmax)
+#
+#    constraint_dc_switch_power_on_off(pm, nw, i, f_idx)
+#    constraint_dc_switch_voltage_on_off(pm, nw, i, switch["f_busdc"], switch["t_busdc"], vad_min, vad_max)
+#end
 
 "enforces an mva limit on the power flow over a switch"
-function constraint_dc_switch_thermal_limit(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
-    switch = _PM.ref(pm, nw, :dcswitch, i)
 
-    if haskey(switch, "thermal_rating")
-        f_idx = (i, switch["f_busdc"], switch["t_busdc"])
-        constraint_dc_switch_thermal_limit(pm, nw, f_idx, switch["thermal_rating"])
-    end
-end
 
 
 function constraint_power_balance_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
@@ -223,8 +216,107 @@ end
 # Busbar splitting
 function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch_couple = _PM.ref(pm, nw, :switch_couples, i)
-    #constraint_exclusivity_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"],switch_couple["bus_split"])
+    #constraint_exclusivity_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"],switch_couple["switch_split"])
     constraint_exclusivity_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"])
+end
+
+function constraint_BS_OTS_branch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_couple = _PM.ref(pm, nw, :switch_couples, i)
+    print("The switch_couple is "*"$switch_couple","\n")
+    print("\n")
+    print("\n")
+    switch_ = _PM.ref(pm, nw, :switch)
+    print("The switch_ is "*"$switch_","\n")
+    print("\n")
+    print("\n")
+    branch_ = _PM.ref(pm, nw, :branch)
+    print("The branch_ is "*"$branch_","\n")
+    print("\n")
+    print("\n")
+    single_switch = switch_[switch_couple["f_sw"]]
+    print("The single_switch is "*"$single_switch","\n")
+    print("\n")
+    print("\n")
+    #print(single_switch)
+    branch_original = single_switch["original"]
+    print("The branch_original is "*"$branch_original","\n")
+    print("\n")
+    print("\n")
+    #if single_switch["auxiliary"] == "branch"
+        constraint_BS_OTS_branch(pm, nw, switch_couple["f_sw"],switch_couple["t_sw"], 
+        (branch_[branch_original]["index"],branch_[branch_original]["f_bus"],branch_[branch_original]["t_bus"]),
+        (branch_[branch_original]["index"],branch_[branch_original]["t_bus"],branch_[branch_original]["f_bus"]),
+        (branch_[branch_original]["index"],branch_[branch_original]["f_bus"],branch_[branch_original]["t_bus"]),
+        (branch_[branch_original]["index"],branch_[branch_original]["t_bus"],branch_[branch_original]["f_bus"]),
+        single_switch,"auxiliary")
+    #end
+end
+
+function constraint_BS_OTS_dcbranch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_couple = _PM.ref(pm, nw, :dcswitch_couples, i)
+    switch_ = _PM.ref(pm, nw, :dcswitch)
+    branch_ = _PM.ref(pm, nw, :branchdc)
+    single_switch = switch_[switch_couple["f_sw"]]
+    #print(single_switch)
+    branch_original = single_switch["original"]
+
+    #if single_switch["auxiliary"] == "branchdc"
+        constraint_BS_OTS_dcbranch(pm, nw, switch_couple["f_sw"],switch_couple["t_sw"], 
+        (branch_[branch_original]["index"],branch_[branch_original]["fbusdc"],branch_[branch_original]["tbusdc"]),
+        (branch_[branch_original]["index"],branch_[branch_original]["tbusdc"],branch_[branch_original]["fbusdc"]),
+        (branch_[branch_original]["index"],branch_[branch_original]["fbusdc"],branch_[branch_original]["tbusdc"]),
+        (branch_[branch_original]["index"],branch_[branch_original]["tbusdc"],branch_[branch_original]["fbusdc"]),
+        single_switch,"auxiliary")
+    #end
+end
+
+"enforces an mva limit on the power flow over a switch"
+function constraint_switch_thermal_limit(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :switch, i)
+
+    if haskey(switch, "thermal_rating")
+        f_idx = (i, switch["f_bus"], switch["t_bus"])
+        constraint_switch_thermal_limit(pm, nw, f_idx, switch["thermal_rating"])
+    end
+end
+
+function constraint_dc_switch_thermal_limit(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :dcswitch, i)
+
+    if haskey(switch, "thermal_rating")
+        f_idx = (i, switch["f_busdc"], switch["t_busdc"])
+        constraint_dc_switch_thermal_limit(pm, nw, f_idx, switch["thermal_rating"])
+    end
+end
+
+function constraint_switch_power_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :switch, i)
+    f_idx = (i, switch["f_bus"], switch["t_bus"])
+
+    constraint_switch_power_on_off(pm, nw, i, f_idx)
+end
+
+function constraint_dc_switch_power_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :dcswitch, i)
+    f_idx = (i, switch["f_busdc"], switch["t_busdc"])
+
+    constraint_dc_switch_power_on_off(pm, nw, i, f_idx)
+end
+
+function constraint_switch_voltage_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :switch, i)
+    vad_min = _PM.ref(pm, nw, :off_angmin)
+    vad_max = _PM.ref(pm, nw, :off_angmax)
+
+    constraint_switch_voltage_on_off(pm, nw, i, switch["f_bus"], switch["t_bus"], vad_min, vad_max)
+end
+
+function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :dcswitch, i)
+    #vad_min = _PM.ref(pm, nw, :Vdcmin)
+    #vad_max = _PM.ref(pm, nw, :Vdcmax)
+
+    constraint_dc_switch_voltage_on_off(pm, nw, i, switch["f_busdc"], switch["t_busdc"])
 end
 
 function constraint_exclusivity_switch_no_OTS(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
@@ -233,15 +325,15 @@ function constraint_exclusivity_switch_no_OTS(pm::_PM.AbstractPowerModel, i::Int
 end
 
 function constraint_voltage_angles_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
-    switch_couple = _PM.ref(pm, nw, :switch_couples, i)
-    switch_from = _PM.ref(pm, nw, :switch, switch_couple["f_sw"])
-    switch_to = _PM.ref(pm, nw, :switch, switch_couple["f_sw"])
+    switch_ = _PM.ref(pm, nw, :switch, i)
+    #switch_from = _PM.ref(pm, nw, :switch, switch_couple["f_sw"])
+    #switch_to = _PM.ref(pm, nw, :switch, switch_couple["f_sw"])
     #switch = _PM.ref(pm, nw, :switch)
+    #switch_
+    bus_1_ = switch_["f_bus"]
+    bus_2_ = switch_["t_bus"]
 
-    bus_1_ = switch_from["f_bus"]
-    bus_2_ = switch_to["t_bus"]
-
-    constraint_voltage_angles_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"],switch_couple["switch_split"],bus_1_,bus_2_)
+    constraint_voltage_angles_switch(pm, nw, switch_["index"], bus_1_ ,bus_2_)
 end
 
 function constraint_voltage_angles_dc_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
@@ -263,7 +355,7 @@ end
 
 function constraint_exclusivity_dc_switch_no_OTS(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch_couple = _PM.ref(pm, nw, :dcswitch_couples, i)
-    constraint_exclusivity_switch_no_OTS(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"], switch_couple["dcswitch_split"])
+    constraint_exclusivity_dc_switch_no_OTS(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"], switch_couple["dcswitch_split"])
 end
 
 function constraint_power_balance_ac_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)

@@ -7,14 +7,16 @@ function run_acdcsw_AC_DC(file, model_constructor, optimizer; kwargs...)
     return _PM.solve_model(file, model_constructor, optimizer, build_acdcsw_AC_DC; ref_extensions=[add_ref_dcgrid_dcswitch!,_PM.ref_add_on_off_va_bounds!], kwargs...)
 end
 
+
 ""
 function build_acdcsw_AC_DC(pm::_PM.AbstractPowerModel)
     _PM.variable_bus_voltage(pm)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
 
-    _PM.variable_switch_indicator(pm)
-    _PM.variable_switch_power(pm)
+    variable_switch_indicator(pm)
+    #variable_switch_indicator_warm_start(pm,warm=true)
+    variable_switch_power(pm)
 
     variable_dc_switch_indicator(pm)
     variable_dc_switch_power(pm)
@@ -37,32 +39,35 @@ function build_acdcsw_AC_DC(pm::_PM.AbstractPowerModel)
         constraint_power_balance_ac_switch(pm, i)
     end
 
+
     for i in _PM.ids(pm, :switch)
-        _PM.constraint_switch_on_off(pm, i)
-        _PM.constraint_switch_thermal_limit(pm, i)
+        constraint_switch_thermal_limit(pm, i)
+        constraint_switch_voltage_on_off(pm,i)
+        constraint_switch_power_on_off(pm,i)
     end
 
     for i in _PM.ids(pm, :dcswitch)
-        constraint_dc_switch_on_off(pm, i)
         constraint_dc_switch_thermal_limit(pm, i)
+        constraint_dc_switch_voltage_on_off(pm,i)
+        constraint_dc_switch_power_on_off(pm,i)
     end
 
     for i in _PM.ids(pm, :switch_couples)
+        #constraint_exclusivity_switch_no_OTS(pm, i)
         constraint_exclusivity_switch(pm, i)
-        constraint_voltage_angles_switch(pm,i)
+        #constraint_voltage_angles_switch(pm,i)
+        constraint_BS_OTS_branch(pm,i)
     end
 
     for i in _PM.ids(pm, :dcswitch_couples)
         constraint_exclusivity_dc_switch(pm, i)
-        constraint_voltage_angles_dc_switch(pm,i)
+        constraint_BS_OTS_dcbranch(pm, i)
     end
 
     for i in _PM.ids(pm, :branch)
         _PM.constraint_ohms_yt_from(pm, i)
         _PM.constraint_ohms_yt_to(pm, i)
-
         _PM.constraint_voltage_angle_difference(pm, i)
-
         _PM.constraint_thermal_limit_from(pm, i)
         _PM.constraint_thermal_limit_to(pm, i)
     end
@@ -126,23 +131,27 @@ function build_acdcsw_AC_DC_no_OTS(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :switch)
-        _PM.constraint_switch_on_off(pm, i)
-        _PM.constraint_switch_thermal_limit(pm, i)
+        constraint_switch_thermal_limit(pm, i)
+        constraint_switch_voltage_on_off(pm,i)
+        constraint_switch_power_on_off(pm,i)
     end
 
     for i in _PM.ids(pm, :dcswitch)
-        constraint_dc_switch_on_off(pm, i)
         constraint_dc_switch_thermal_limit(pm, i)
+        constraint_dc_switch_voltage_on_off(pm,i)
+        constraint_dc_switch_power_on_off(pm,i)
     end
 
     for i in _PM.ids(pm, :switch_couples)
-        constraint_exclusivity_switch_no_OTS(pm, i)
-        constraint_voltage_angles_switch(pm,i)
+        #constraint_exclusivity_switch_no_OTS(pm, i)
+        #onstraint_exclusivity_switch(pm, i)
+        #constraint_voltage_angles_switch(pm,i)
+        constraint_BS_OTS_branch(pm,i)
     end
 
     for i in _PM.ids(pm, :dcswitch_couples)
         constraint_exclusivity_dc_switch_no_OTS(pm, i)
-        constraint_voltage_angles_dc_switch(pm,i)
+        constraint_BS_OTS_dcbranch(pm, i)
     end
 
     for i in _PM.ids(pm, :branch)

@@ -59,7 +59,7 @@ function constraint_power_balance_ac_switch(pm::_PM.AbstractDCPModel, n::Int, i:
     v = 1
     psw  = _PM.var(pm, n, :psw)
     qsw  = _PM.var(pm, n, :qsw)
-
+    print(bus_arcs_sw)
     cstr_p = JuMP.@constraint(pm.model, sum(p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(psw[sw] for sw in bus_arcs_sw) == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*vm^2)
 
     if _IM.report_duals(pm)

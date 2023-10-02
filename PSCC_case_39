@@ -134,6 +134,15 @@ result_AC_DC_39_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_39_acdc
 
 
 
+data_busbars_ac_split_39_acdc = deepcopy(data_39_acdc)
+data_busbars_ac_split_39_acdc_no_OTS = deepcopy(data_39_acdc)
+splitted_bus_ac = [16, 26, 30, 1, 4, 21, 39]
+splitted_bus_dc = collect(34:39)
+
+data_busbars_ac_split_39_acdc,  switches_couples_ac_5,  extremes_ZILs_39_ac  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_split_39_acdc,splitted_bus_ac)
+result_AC_DC_39_switches_DC  = _PMTP.run_acdcsw_DC(data_busbars_ac_split_39_acdc,ACPPowerModel,juniper)
+
+
 
 
 

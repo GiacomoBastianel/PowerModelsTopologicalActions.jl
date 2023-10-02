@@ -35,6 +35,7 @@ data_file_39_acdc = joinpath(@__DIR__,"data_sources",test_case_39_acdc)
 data_original_39_acdc = _PM.parse_file(data_file_39_acdc)
 data_39_acdc = deepcopy(data_original_39_acdc)
 _PMACDC.process_additional_data!(data_39_acdc)
+_PMACDC.process_additional_data!(data_original_39_acdc)
 
 
 # Configuration 1, nice results
@@ -47,7 +48,9 @@ for (l_id,l) in data_39_acdc["load"]
         l["qd"] = l["qd"]*6
     end
 end
+#-> with this configuration, you have the best improvement with busbar 16
 
+#=
 # Configuration 2, 
 for (l_id,l) in data_39_acdc["load"]
     if l_id != "3"
@@ -59,12 +62,10 @@ for (l_id,l) in data_39_acdc["load"]
     end
 end
 
-#-> with this configuration, you have the best improvement with busbar 16
-
 #for (l_id,l) in data_39_acdc["branch"]
 #    l["rate_a"] = 0.8
 #end
-
+=#
 
 #######################################################################################
 ## Optimal transmission switching models ##
@@ -75,21 +76,47 @@ result_opf_39_ac    = _PMACDC.run_acdcopf(data_39_acdc,ACPPowerModel,ipopt; sett
 # Solving AC OTS with OTS only on the AC grid part
 result_AC_ots_39    = _PMTP.run_acdcots_AC(data_39_acdc,ACPPowerModel,juniper; setting = s)
 
+count_ = 0
+for (br_id,br) in result_AC_ots_39["solution"]["branch"]
+    if br["br_status"] == 0.0
+        count_ += 1
+    end
+end
+
 # Solving AC OTS with OTS only on the DC grid part 
 result_DC_ots_39    = _PMTP.run_acdcots_DC(data_39_acdc,ACPPowerModel,juniper; setting = s)
 
 # Solving AC OTS with OTS on both AC and DC grid part
 result_AC_DC_ots_39    = _PMTP.run_acdcots_AC_DC(data_39_acdc,ACPPowerModel,juniper; setting = s)
+count_ = 0
+for (br_id,br) in result_AC_DC_ots_39["solution"]["branch"]
+    if br["br_status"] == 0.0
+        count_ += 1
+    end
+end
+
+data_39_acdc["branchdc"]["2"]
+data_39_acdc["branchdc"]["4"]
+data_39_acdc["branchdc"]["12"]
+
+# it actually works, multiple branchdc are connected to the convdc 2
+data_39_acdc["convdc"]["4"]
+data_39_acdc["convdc"]["2"]
+data_39_acdc["convdc"]["3"]
+data_39_acdc["convdc"]["10"]
+data_39_acdc["convdc"]["8"]
+
 
 
 AC_DC_OTS_br = [[br_id,br["br_status"]] for (br_id,br) in result_AC_DC_ots_39["solution"]["branchdc"]]
-AC_DC_OTS_conv = [[br_id,br["conv_status"]] for (br_id,br) in result_AC_DC_ots_39["solution"]["branchdc"]]
+AC_DC_OTS_conv = [[br_id,br["conv_status"]] for (br_id,br) in result_AC_DC_ots_39["solution"]["convdc"]]
 
 
 #######################################################################################
 ## Busbar splitting models ##
 #######################################################################################
 # AC BS for AC/DC grid with AC switches state as decision variable
+
 data_busbars_ac_split_39_acdc = deepcopy(data_39_acdc)
 data_busbars_ac_split_39_acdc_no_OTS = deepcopy(data_39_acdc)
 
@@ -123,27 +150,79 @@ end
 
 data_busbars_ac_split_39_acdc = deepcopy(data_39_acdc)
 data_busbars_ac_split_39_acdc_no_OTS = deepcopy(data_39_acdc)
-#splitted_bus_ac = [16, 26, 30, 1, 4, 21, 39]
-splitted_bus_ac = 1
+splitted_bus_ac = [16, 26, 30, 1, 4, 21, 39]
+#splitted_bus_ac = 16
 
-splitted_bus_ac = collect(20:30)
+#splitted_bus_ac = collect(20:30)
 
-data_busbars_ac_split_39_acdc,  switches_couples_ac_5,  extremes_ZILs_39_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_39_acdc,splitted_bus_ac)
+data_busbars_ac_split_39_acdc,  switches_couples_ac_39,  extremes_ZILs_39_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_39_acdc,splitted_bus_ac)
 result_AC_DC_39_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_39_acdc,ACPPowerModel,juniper)
 
 data_busbars_ac_split_39_acdc_no_OTS,  switches_couples_ac_5_no_OTS,  extremes_ZILs_39_ac_no_OTS  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_39_acdc_no_OTS,splitted_bus_ac)
 result_AC_DC_39_switches_AC_no_OTS  = _PMTP.run_acdcsw_AC_no_OTS(data_busbars_ac_split_39_acdc_no_OTS,ACPPowerModel,juniper)
 
+count_ = 0
+for (br_id,br) in result_AC_DC_39_switches_AC["solution"]["branch"]
+    if br["status"] == 0.0
+        count_ += 1
+    end
+end
+count_ = 0
+for (br_id,br) in result_AC_DC_39_switches_AC_no_OTS["solution"]["branch"]
+    if br["br_status"] == 0.0
+        count_ += 1
+    end
+end
+
+
+data_busbars_ac_dc_split_39_dc = deepcopy(data_39_acdc)
+data_busbars_ac_split_39_dc_no_OTS = deepcopy(data_39_acdc)
+#splitted_bus_ac = [16, 26, 30, 1, 4, 21, 39]
+#splitted_bus_ac = 16
+splitted_bus_dc = collect(1:5)
+
+data_busbars_ac_dc_split_39_acdc_dc_sw , dc_switches_couples_dc_39, dc_extremes_ZILs_39_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_39_dc,splitted_bus_dc)
+result_AC_DC_39_switch_DC  = _PMTP.run_acdcsw_DC(data_busbars_ac_dc_split_39_acdc_dc_sw, ACPPowerModel,juniper)
+
+
+
+
+
+
 
 data_busbars_ac_dc_split_39_acdc = deepcopy(data_39_acdc)
 data_busbars_ac_split_39_acdc_no_OTS = deepcopy(data_39_acdc)
 #splitted_bus_ac = [16, 26, 30, 1, 4, 21, 39]
-splitted_bus_ac = 1
+splitted_bus_ac = 16
 splitted_bus_dc = collect(1:10)
 
 data_busbars_ac_dc_split_39_acdc_ac_sw,  ac_switches_couples_ac_dc_39, ac_extremes_ZILs_39_ac_dc  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_dc_split_39_acdc,splitted_bus_ac)
 data_busbars_ac_dc_split_39_acdc_ac_dc_sw , dc_switches_couples_ac_dc_39, dc_extremes_ZILs_39_ac_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_39_acdc_ac_sw,splitted_bus_dc)
 result_AC_DC_39_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_39_acdc_ac_dc_sw, ACPPowerModel,juniper)
+
+
+result_1_5_dc = deepcopy(result_AC_DC_39_switch_AC_DC)
+data_1_5_dc = deepcopy(data_busbars_ac_dc_split_39_acdc_ac_dc_sw)
+
+
+result_1_10_dc = deepcopy(result_AC_DC_39_switch_AC_DC)
+data_1_10_dc = deepcopy(data_busbars_ac_dc_split_39_acdc_ac_dc_sw)
+
+
+for i in collect(1:78)
+    #(br_id,br) in result_AC_DC_5_switches_AC["solution"]["switch"]
+    if !haskey(data_busbars_ac_dc_split_39_acdc_ac_dc_sw["dcswitch"]["$i"],"original")
+        print([i,data_busbars_ac_dc_split_39_acdc_ac_dc_sw["dcswitch"]["$i"]["t_busdc"],result_1_10_dc["solution"]["dcswitch"]["$i"]["status"]],"\n")    
+    else
+        print([i,data_busbars_ac_dc_split_39_acdc_ac_dc_sw["dcswitch"]["$i"]["original"],data_busbars_ac_dc_split_39_acdc_ac_dc_sw["dcswitch"]["$i"]["auxiliary"],data_busbars_ac_dc_split_39_acdc_ac_dc_sw["dcswitch"]["$i"]["t_busdc"],result_1_10_dc["solution"]["dcswitch"]["$i"]["status"]],"\n")
+    end
+end
+
+
+
+
+
+
 
 data_busbars_ac_dc_split_39_acdc_ac_sw_no_OTS,  ac_switches_couples_ac_dc_39_no_OTS, ac_extremes_ZILs_39_ac_dc_no_OTS  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_39_acdc_no_OTS,splitted_bus_ac)
 data_busbars_ac_dc_split_39_acdc_ac_dc_sw_no_OTS , dc_switches_couples_ac_dc_39_no_OTS, dc_extremes_ZILs_39_ac_dc_no_OTS  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_39_acdc_ac_sw_no_OTS,splitted_bus_dc)

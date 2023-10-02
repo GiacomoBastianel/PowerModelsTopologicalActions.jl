@@ -35,12 +35,14 @@ function build_acdcsw_DC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :dcswitch)
-        constraint_dc_switch_on_off(pm, i)
         constraint_dc_switch_thermal_limit(pm, i)
+        constraint_dc_switch_voltage_on_off(pm,i)
+        constraint_dc_switch_power_on_off(pm,i)
     end
 
     for i in _PM.ids(pm, :dcswitch_couples)
         constraint_exclusivity_dc_switch(pm, i)
+        constraint_BS_OTS_dcbranch(pm, i)
     end
 
     for i in _PM.ids(pm, :branch)
