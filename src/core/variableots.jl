@@ -1,4 +1,3 @@
-
 ########## OTS variables ###########
 function variable_dc_branch_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)
     if !relax
@@ -176,9 +175,6 @@ function variable_switch_power_imaginary(pm::_PM.AbstractPowerModel; nw::Int=_PM
 
     report && _PM.sol_component_value_edge(pm, nw, :switch, :qsw_fr, :qsw_to, _PM.ref(pm, nw, :arcs_from_sw), _PM.ref(pm, nw, :arcs_to_sw), qsw_expr)
 end
-
-
-
 
 
 # DC grid
