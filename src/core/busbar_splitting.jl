@@ -79,6 +79,7 @@ function AC_busbar_split(data,bus_to_be_split)
                 data["bus"]["$added_gen_bus"]["auxiliary_bus"] = true
                 data["bus"]["$added_gen_bus"]["original"] = parse(Int64,g_id)  
                 data["bus"]["$added_gen_bus"]["auxiliary"] = "gen"
+                data["bus"]["$added_gen_bus"]["bus_split"] = parse(Int64,i) 
                 data["bus"]["$added_gen_bus"]["split"] = false
                 g["gen_bus"] = added_gen_bus
             end
@@ -179,6 +180,7 @@ function AC_busbar_split(data,bus_to_be_split)
                 data["switch"]["$added_switch"]["source_id"][2] = deepcopy(added_switch)
                 data["switch"]["$added_switch"]["auxiliary"] = deepcopy(b["auxiliary"]) 
                 data["switch"]["$added_switch"]["original"] = deepcopy(b["original"]) 
+                data["switch"]["$added_switch"]["bus_split"] = parse(Int64,i) 
                 data["switch"]["$added_switch"]["index"] = added_switch 
             end
         end
@@ -192,6 +194,7 @@ function AC_busbar_split(data,bus_to_be_split)
                 data["switch"]["$added_switch"]["t_bus"] = deepcopy(extremes_ZIL[i][2])
                 data["switch"]["$added_switch"]["index"] = added_switch
                 data["switch"]["$added_switch"]["auxiliary"] = deepcopy(b["auxiliary"]) 
+                data["switch"]["$added_switch"]["bus_split"] = parse(Int64,i) 
                 data["switch"]["$added_switch"]["original"] = deepcopy(b["original"])  
                 data["switch"]["$added_switch"]["source_id"][2] = deepcopy(added_switch)
             end
@@ -211,7 +214,7 @@ function compute_couples_of_switches(data)
     t_sws = []
     for (sw_id,sw) in data["switch"]
         for l in keys(data["switch"])
-            if (haskey(sw, "auxiliary") && haskey(data["switch"][l], "auxiliary")) && (sw["auxiliary"] == data["switch"][l]["auxiliary"]) && (sw["original"] == data["switch"][l]["original"]) && (sw["index"] != data["switch"][l]["index"]) && (sw["bus_split"] == data["switch"][l]["bus_split"])
+            if (haskey(sw, "auxiliary") && haskey(data["switch"][l], "auxiliary")) && (sw["auxiliary"] == data["switch"][l]["auxiliary"]) && (sw["original"] == data["switch"][l]["original"]) && (sw["index"] != data["switch"][l]["index"]) &&  (sw["bus_split"] == data["switch"][l]["bus_split"])
                 if !issubset(sw["index"],t_sws) 
                     switch_couples["$sw_id"] = Dict{String,Any}()
                     switch_couples["$sw_id"]["f_sw"] = sw["index"]

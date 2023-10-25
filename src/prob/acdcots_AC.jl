@@ -42,7 +42,6 @@ function build_acdcots_AC(pm::_PM.AbstractPowerModel)
 
     for i in _PM.ids(pm, :branch)
         #constraint_linearised_binary_variable(pm,i) # to be removed
-
         _PM.constraint_ohms_yt_from_on_off(pm, i)
         _PM.constraint_ohms_yt_to_on_off(pm, i)
 

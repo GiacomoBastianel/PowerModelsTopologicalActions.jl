@@ -22,9 +22,9 @@ juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt
 test_case = "case5.m"
 test_case_sw = "case5_sw.m"
 test_case_acdc = "case5_acdc.m"
-#test_case_acdc = "case24_3zones_acdc.m"
-#test_case_acdc = "case39_acdc.m"
-#test_case_acdc = "case3120sp_acdc.m"
+
+test_case_39 = "case39_acdc.m"
+
 
 #######################################################################################
 ## Parsing input data ##
@@ -37,12 +37,9 @@ data_acdc = deepcopy(data_original_acdc)
 _PMACDC.process_additional_data!(data_acdc)
 s = Dict("output" => Dict("branch_flows" => true), "conv_losses_mp" => true)
 #s = Dict("output" => Dict("branch_flows" => true,"report_duals" => true), "conv_losses_mp" => true)
-
 data_dc_busbar_split = deepcopy(data_acdc)
-
 data_file = joinpath(@__DIR__,"data_sources",test_case)
 data_original = _PM.parse_file(data_file_acdc)
-
 
 #######################################################################################
 ## Optimal transmission switching models ##
@@ -52,15 +49,15 @@ result_opf = _PMACDC.run_acdcopf(data_acdc,ACPPowerModel,juniper)
 result_soc = _PMACDC.run_acdcopf(data_acdc,SOCWRPowerModel,juniper)
 result_qc = _PMACDC.run_acdcopf(data_acdc,QCRMPowerModel,juniper)
 
-
 # AC OTS with PowerModels for AC grid
-result_ots = _PM.solve_ots(data,ACPPowerModel,juniper)
-result_soc = _PM.solve_ots(data,SOCWRPowerModel,juniper)
-result_qc  = _PM.solve_ots(data,QCRMPowerModel,juniper)
+#result_ots = _PM.solve_ots(data,ACPPowerModel,juniper)
+#result_soc = _PM.solve_ots(data,SOCWRPowerModel,juniper)
+#result_qc  = _PM.solve_ots(data,QCRMPowerModel,juniper)
 
 # Solving AC OTS with OTS only on the DC grid part 
 result_homemade_ots_DC = _PMTP.run_acdcots_DC(data_acdc,ACPPowerModel,juniper)
 result_homemade_ots_soc = _PMTP.run_acdcots_DC(data_acdc,SOCWRPowerModel,juniper)
+#result_homemade_ots_soc = _PMTP.run_acdcots_DC(data_acdc,SOCBFPowerModel,juniper)
 result_homemade_ots_qc = _PMTP.run_acdcots_DC(data_acdc,QCRMPowerModel,juniper)
 
 # Solving AC OTS with OTS only on the AC grid part
@@ -68,13 +65,17 @@ result_homemade_ots = _PMTP.run_acdcots_AC(data_acdc,ACPPowerModel,juniper)
 result_homemade_ots_soc = _PMTP.run_acdcots_AC(data_acdc,SOCWRPowerModel,juniper)
 result_homemade_ots_qc = _PMTP.run_acdcots_AC(data_acdc,QCRMPowerModel,juniper)
 
-result_homemade_ots = _PMTP.run_acdcots_AC(data_acdc,ACPPowerModel,juniper)
-result_homemade_ots_SOC = _PMTP.run_acdcots_AC(data_acdc,SOCWRPowerModel,juniper)
-
-
+for (br_id,br) in result_homemade_ots_soc["solution"]["branchdc"]
+    print(br_id,"__",br["br_status"],"\n")
+end
+for (br_id,br) in result_homemade_ots_qc["solution"]["branchdc"]
+    print(br_id,"__",br["br_status"],"\n")
+end
 
 # Solving AC OTS with OTS on both AC and DC grid part
 result_homemade_ots_AC_DC = _PMTP.run_acdcots_AC_DC(data_acdc,ACPPowerModel,juniper)
+result_homemade_ots_AC_DC_soc = _PMTP.run_acdcots_AC_DC(data_acdc,SOCWRPowerModel,juniper)
+result_homemade_ots_AC_DC_qc = _PMTP.run_acdcots_AC_DC(data_acdc,QCRMPowerModel,juniper)
 
 #######################################################################################
 ## Busbar splitting models ##
@@ -82,6 +83,8 @@ result_homemade_ots_AC_DC = _PMTP.run_acdcots_AC_DC(data_acdc,ACPPowerModel,juni
 # AC OTS for AC/DC grid with AC switches state as decision variable
 data_busbar_split_acdc = deepcopy(data_original_acdc)
 _PMACDC.process_additional_data!(data_busbar_split_acdc)
+
+splitted_buses = [4,5]
 
 data_sw, switch_couples, extremes_ZIL = _PMTP.AC_busbar_split(data_busbar_split_acdc,1)
 result_PM_AC_DC_switch_AC = _PM._solve_oswpf(data_sw,DCPPowerModel,juniper)

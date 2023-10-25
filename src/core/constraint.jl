@@ -23,8 +23,8 @@ function constraint_converter_limit_on_off_dc_ots(pm::_PM.AbstractPowerModel, n:
     qconv_tf_to = _PM.var(pm, n, :qconv_tf_to)[i]
     qconv_pr_fr = _PM.var(pm, n, :qconv_pr_fr)[i]
     iconv_ac = _PM.var(pm, n, :iconv_ac)[i]
-    vmc = _PM.var(pm, n, :vmc, i)
-    vmf = _PM.var(pm, n, :vmf, i)
+    #vmc = _PM.var(pm, n, :vmc, i)
+    #vmf = _PM.var(pm, n, :vmf, i)
 
     z_dc = _PM.var(pm, n, :z_conv_dc, i)
 

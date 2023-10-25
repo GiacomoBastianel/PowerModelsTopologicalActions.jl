@@ -32,7 +32,7 @@ function build_acdcots_AC_DC(pm::_PM.AbstractPowerModel)
 
     _PM.objective_min_fuel_cost(pm)
 
-    _PM.constraint_model_voltage(pm)
+    _PM.constraint_model_voltage_on_off(pm)
     _PMACDC.constraint_voltage_dc(pm)
     
     for i in _PM.ids(pm, :ref_buses)

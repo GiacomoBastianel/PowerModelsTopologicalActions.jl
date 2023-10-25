@@ -121,7 +121,7 @@ data_busbar_ac_split_5_acdc, switch_couples_ac_5,   extremes_ZIL_5_ac  = _PMTP.A
 data_busbar_ac_split_39_acdc, switch_couples_ac_39, extremes_ZIL_39_ac = _PMTP.AC_busbar_split(data_busbar_ac_split_39_acdc,1)
 
 result_AC_DC_5_switch_AC  = _PMTP.run_acdcsw_AC(data_busbar_ac_split_5_acdc,ACPPowerModel,juniper)
-result_AC_DC_24_switch_AC = _PMTP.run_acdcsw_AC(data_busbar_ac_split_24_acdc,ACPPowerModel,juniper)
+result_AC_DC_24_switch_AC = _PMTP.run_acdcsw_AC(data_busbar_ac_split_5_acdc,SOCWRPowerModel,juniper)
 result_AC_DC_39_switch_AC = _PMTP.run_acdcsw_AC(data_busbar_ac_split_39_acdc,ACPPowerModel,juniper)
 
 
@@ -165,14 +165,12 @@ data_busbars_ac_split_24_acdc = deepcopy(data_24_acdc)
 data_busbars_ac_split_39_acdc = deepcopy(data_39_acdc)
 #data_busbar_split_3120_acdc = deepcopy(data_file_3120_acdc)
 
-splitted_bus_ac = [4,5]
+splitted_bus_ac = [2,4]
 
 splitted_bus_ac = 5
 data_busbars_ac_split_5_acdc = deepcopy(data_5_acdc)
 data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
 result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper)
-
-
 
 
 data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
