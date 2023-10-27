@@ -39,15 +39,9 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :switch)
-        # old
-        #_PM.constraint_switch_on_off(pm, i)
-        #_PM.constraint_switch_thermal_limit(pm, i)
-
-        # new
         constraint_switch_thermal_limit(pm, i)
         constraint_switch_voltage_on_off(pm,i)
         constraint_switch_power_on_off(pm,i)
-        #constraint_voltage_angles_switch(pm,i)
     end
 
     for i in _PM.ids(pm, :switch_couples)
@@ -85,11 +79,13 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
     end
 end
 
+""
+# The ''_warm functions will probably be removed if we do not linearise binary variables
+#=
 function run_acdcsw_AC_warm(file, model_constructor, optimizer, warm_values; kwargs...)
     return _PM.solve_model(file, model_constructor, optimizer, build_acdcsw_AC_warm(warm_values); ref_extensions=[_PMACDC.add_ref_dcgrid!,_PM.ref_add_on_off_va_bounds!], kwargs...)
 end
 
-""
 function build_acdcsw_AC_warm(pm::_PM.AbstractPowerModel,warm_values)
     # AC grid
     _PM.variable_bus_voltage(pm)
@@ -167,6 +163,7 @@ function build_acdcsw_AC_warm(pm::_PM.AbstractPowerModel,warm_values)
         end
     end
 end
+=#
 
 
 

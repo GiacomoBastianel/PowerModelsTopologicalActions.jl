@@ -153,3 +153,23 @@ function constraint_power_balance_ac_switch(pm::_PM.AbstractWModels, n::Int, i::
         _PM.sol(pm, n, :bus, i)[:lam_kcl_i] = cstr_q
     end
 end
+
+function constraint_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i, f_bus, t_bus, vad_min, vad_max)
+    #vm_fr = _PM.var(pm, n, :vm_fr)
+    #vm_to = _PM.var(pm, n, :vm_to)
+
+    w_fr = _PM.var(pm, n, :w, f_bus)
+    w_to = _PM.var(pm, n, :w, t_bus)
+
+    z = _PM.var(pm, n, :z_switch, i)
+
+    JuMP.@constraint(pm.model, z*w_fr == z*w_to)
+end
+
+function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i, f_busdc, t_busdc)
+    w_fr = _PM.var(pm, n, :wdc, f_busdc)
+    w_to = _PM.var(pm, n, :wdc, t_busdc)
+    z = _PM.var(pm, n, :z_dcswitch, i)
+
+    JuMP.@constraint(pm.model, z*w_fr == z*w_to)
+end

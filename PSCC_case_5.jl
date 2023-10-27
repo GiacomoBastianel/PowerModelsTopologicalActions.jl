@@ -21,7 +21,7 @@ mosek = JuMP.optimizer_with_attributes(Mosek.Optimizer)
 ## Input data ##
 #######################################################################################
 test_case_5_acdc = "case5_acdc.m"
-
+test_case_5_acdc = "case67_acdc.m"
 #######################################################################################
 ## Parsing input data ##
 #######################################################################################
@@ -85,13 +85,22 @@ data_5_acdc["branch"]["1"]["rate_a"] = 0.5
 # AC OPF for ACDC grid
 result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s_dual)
 
+result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,ipopt; setting = s_dual)
+
+
 # Solving AC OTS with OTS only on the AC grid part
 result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+
+result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,SOCWRPowerModel,juniper; setting = s)
 
 # Solving AC OTS with OTS only on the DC grid part 
 result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
 
+result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,SOCWRPowerModel,juniper; setting = s)
+
 # Solving AC OTS with OTS on both AC and DC grid part
+result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+
 result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
 
 ##############
@@ -143,22 +152,62 @@ for i in 1:length(result_AC_DC_5_switches_AC["solution"]["switch"])
     push!(switches_results,result_AC_DC_5_switches_AC["solution"]["switch"]["$i"]["status"])
 end
 
-result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC_warm(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper,switches_results)
+# Working on QC and SOC relaxations
+data_busbars_ac_split_5_acdc = deepcopy(data_5_acdc)
+data_busbars_ac_split_5_acdc_no_OTS = deepcopy(data_5_acdc)
+
+# Busbars being split
+#splitted_bus_ac = [1,2,3,4,5]
+splitted_bus_ac = [2,4]
+
+data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
+result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,SOCWRPowerModel,juniper)
+switches_results = []
+for i in 1:length(result_AC_DC_5_switches_AC["solution"]["switch"])
+    push!(switches_results,result_AC_DC_5_switches_AC["solution"]["switch"]["$i"]["status"])
+end
 
 
 
-sum_OPF = 0 
-sum_OTS = 0 
-sum_BS  = 0 
-for (g_id,g) in result_opf_5_ac["solution"]["gen"]
-    sum_OPF = sum_OPF + g["pg"]*data_original_5_acdc["gen"][g_id]["cost"][1]
-end
-for (g_id,g) in result_AC_ots_5["solution"]["gen"]
-    sum_OTS = sum_OTS + g["pg"]*data_original_5_acdc["gen"][g_id]["cost"][1]
-end
-for (g_id,g) in result_AC_DC_5_switches_AC["solution"]["gen"]
-    sum_BS = sum_BS + g["pg"]*data_original_5_acdc["gen"][g_id]["cost"][1]
-end
+
+# AC OTS for AC/DC grid with DC switches state as decision variable
+data_busbars_dc_split_5_acdc = deepcopy(data_5_acdc)
+splitted_bus_dc = [1,2,3]
+data_busbars_dc_split_5_acdc , switches_couples_dc_5,  extremes_ZILs_5_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_dc_split_5_acdc,splitted_bus_dc)
+result_AC_DC_5_switches_DC  = _PMTP.run_acdcsw_DC(data_busbars_dc_split_5_acdc, SOCWRPowerModel,juniper)
+
+
+
+
+
+# AC OTS for AC/DC grid with AC and DC switches state as decision variable
+data_busbars_ac_dc_split_5_acdc = deepcopy(data_5_acdc)
+splitted_bus_ac = [2,4]
+splitted_bus_dc = [1,2,3]
+#data_busbars_ac_dc_split_5_acdc["branchdc"]["2"]["status"] = 0
+
+data_busbars_ac_dc_split_5_acdc_ac_sw,  ac_switches_couples_ac_dc_5, ac_extremes_ZILs_5_ac_dc  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc,splitted_bus_ac)
+data_busbars_ac_dc_split_5_acdc_ac_dc_sw , dc_switches_couples_ac_dc_5, dc_extremes_ZILs_5_ac_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc_ac_sw,splitted_bus_dc)
+result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_5_acdc, SOCWRPowerModel,juniper)
+
+
+
+data_busbars_ac_dc_split_5_acdc = deepcopy(data_5_acdc)
+splitted_bus_ac = [2,4]
+splitted_bus_dc = [1,2,3]
+#data_busbars_ac_dc_split_5_acdc["branchdc"]["2"]["status"] = 0
+
+data_busbars_ac_dc_split_5_acdc_ac_sw,  ac_switches_couples_ac_dc_5, ac_extremes_ZILs_5_ac_dc  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc,splitted_bus_ac)
+data_busbars_ac_dc_split_5_acdc_ac_dc_sw , dc_switches_couples_ac_dc_5, dc_extremes_ZILs_5_ac_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc_ac_sw,splitted_bus_dc)
+result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC_no_OTS(data_busbars_ac_dc_split_5_acdc, QCRMPowerModel,juniper)
+
+
+
+
+
+
+
+
 
 
 
