@@ -9,15 +9,16 @@ end
 
 
 ""
-function build_acdcsw_AC_DC(pm::_PM.AbstractPowerModel)
+function build_acdcsw_AC_DC(pm::_PM.AbstractPowerModel) # this model combines what defined in the build_acdcsw_AC and build_acdcsw_DC models, please refer to those functions to have more detailed explanation of those formulations
+    # AC grid
     _PM.variable_bus_voltage(pm)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
 
     variable_switch_indicator(pm)
-    #variable_switch_indicator_warm_start(pm,warm=true)
     variable_switch_power(pm)
 
+    # DC grid
     variable_dc_switch_indicator(pm)
     variable_dc_switch_power(pm)
 
@@ -26,8 +27,10 @@ function build_acdcsw_AC_DC(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dc_converter(pm)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
+    # Objective function
     _PM.objective_min_fuel_cost(pm)
 
+    # Constraints
     _PM.constraint_model_voltage(pm)
     _PMACDC.constraint_voltage_dc(pm)
 
@@ -53,9 +56,7 @@ function build_acdcsw_AC_DC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :switch_couples)
-        #constraint_exclusivity_switch_no_OTS(pm, i)
         constraint_exclusivity_switch(pm, i)
-        #constraint_voltage_angles_switch(pm,i)
         constraint_BS_OTS_branch(pm,i)
     end
 
@@ -102,6 +103,7 @@ end
 
 ""
 function build_acdcsw_AC_DC_no_OTS(pm::_PM.AbstractPowerModel)
+    # AC grid
     _PM.variable_bus_voltage(pm)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
@@ -109,6 +111,7 @@ function build_acdcsw_AC_DC_no_OTS(pm::_PM.AbstractPowerModel)
     _PM.variable_switch_indicator(pm)
     _PM.variable_switch_power(pm)
 
+    # DC grid
     variable_dc_switch_indicator(pm)
     variable_dc_switch_power(pm)
 
@@ -117,8 +120,10 @@ function build_acdcsw_AC_DC_no_OTS(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dc_converter(pm)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
+    # Objective function
     _PM.objective_min_fuel_cost(pm)
 
+    # Constraints
     _PM.constraint_model_voltage(pm)
     _PMACDC.constraint_voltage_dc(pm)
 
@@ -143,9 +148,7 @@ function build_acdcsw_AC_DC_no_OTS(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :switch_couples)
-        #constraint_exclusivity_switch_no_OTS(pm, i)
-        #onstraint_exclusivity_switch(pm, i)
-        #constraint_voltage_angles_switch(pm,i)
+        constraint_exclusivity_switch_no_OTS(pm, i)
         constraint_BS_OTS_branch(pm,i)
     end
 

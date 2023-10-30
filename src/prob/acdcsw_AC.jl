@@ -14,8 +14,8 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
 
-    variable_switch_indicator(pm)#, relax = true)
-    variable_switch_power(pm)
+    variable_switch_indicator(pm) # binary variable to indicate the status of an ac switch
+    variable_switch_power(pm) # variable to indicate the power flowing through an ac switch (if closed)
 
     # DC grid
     _PMACDC.variable_active_dcbranch_flow(pm)
@@ -35,18 +35,18 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :bus)
-        constraint_power_balance_ac_switch(pm, i)
+        constraint_power_balance_ac_switch(pm, i) # including the ac switches in the power balance of the AC part of an AC/DC grid
     end
 
     for i in _PM.ids(pm, :switch)
-        constraint_switch_thermal_limit(pm, i)
-        constraint_switch_voltage_on_off(pm,i)
-        constraint_switch_power_on_off(pm,i)
+        constraint_switch_thermal_limit(pm, i) # limiting the apparent power flowing through an ac switch
+        constraint_switch_voltage_on_off(pm,i) # making sure that the voltage magnitude and angles are equal at the two extremes of a closed switch
+        constraint_switch_power_on_off(pm,i) # limiting the maximum active and reactive power through an ac switch
     end
 
     for i in _PM.ids(pm, :switch_couples)
-        constraint_exclusivity_switch(pm, i)
-        constraint_BS_OTS_branch(pm,i)
+        constraint_exclusivity_switch(pm, i) # the sum of the switches in a couple must be lower or equal than one (if OTS is allowed, like here), as each grid element is connected to either part of a split busbar no matter if the ZIL switch is opened or closed
+        constraint_BS_OTS_branch(pm,i) # making sure that if the grid element is not reconnected to the split busbar, the active and reactive power flowing through the switch is 0
     end
 
     for i in _PM.ids(pm, :branch)
@@ -172,7 +172,7 @@ function run_acdcsw_AC_no_OTS(file, model_constructor, optimizer; kwargs...)
 end
 
 ""
-function build_acdcsw_AC_no_OTS(pm::_PM.AbstractPowerModel)
+function build_acdcsw_AC_no_OTS(pm::_PM.AbstractPowerModel) # refer to the model above for a more refined description of the model
     # AC grid
     _PM.variable_bus_voltage(pm)
     _PM.variable_gen_power(pm)
@@ -209,9 +209,7 @@ function build_acdcsw_AC_no_OTS(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :switch_couples)
-        constraint_exclusivity_switch_no_OTS(pm, i)
-        #constraint_exclusivity_switch(pm, i)
-        #constraint_voltage_angles_switch(pm,i)
+        constraint_exclusivity_switch_no_OTS(pm, i) # the sum of the switches in a couple must be lower or equal than one (if OTS is allowed, not here), as each grid element is connected to either part of a split busbar no matter if the ZIL switch is opened or closed
         constraint_BS_OTS_branch(pm,i)
     end
 

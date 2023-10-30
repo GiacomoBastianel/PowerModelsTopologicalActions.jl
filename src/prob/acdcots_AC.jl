@@ -1,5 +1,5 @@
 export run_acdcots_AC
-export run_acdcots_AC_NLP
+#export run_acdcots_AC_NLP
 
 ## AC formulation of the AC/DC OTS with only AC branches that can be switched ##
 ""
@@ -41,7 +41,6 @@ function build_acdcots_AC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :branch)
-        #constraint_linearised_binary_variable(pm,i) # to be removed
         _PM.constraint_ohms_yt_from_on_off(pm, i)
         _PM.constraint_ohms_yt_to_on_off(pm, i)
 
@@ -78,11 +77,9 @@ function run_acdcots_AC_NLP(file::String, model_type::Type, solver; kwargs...)
 end
 
 ""
-function run_acdcots_AC_NLP(data::Dict{String,Any}, model_type::Type, solver; kwargs...)
-    return _PM.solve_model(data, model_type, solver, build_acdcots_AC_NLP; ref_extensions=[_PMACDC.add_ref_dcgrid!,_PM.ref_add_on_off_va_bounds!], kwargs...)
-end
 
-""
+# To be deleted later
+#=
 function build_acdcots_AC_NLP(pm::_PM.AbstractPowerModel)
     _PM.variable_bus_voltage_on_off(pm)
     _PM.variable_gen_power(pm)
@@ -94,7 +91,6 @@ function build_acdcots_AC_NLP(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
     _PM.variable_branch_indicator(pm,relax = true)
-    #variable_branch_indicator_linear(pm)
 
     _PM.objective_min_fuel_cost(pm)
 
@@ -137,3 +133,4 @@ function build_acdcots_AC_NLP(pm::_PM.AbstractPowerModel)
         end
     end
 end
+=#

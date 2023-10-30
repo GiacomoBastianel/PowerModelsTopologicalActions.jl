@@ -26,8 +26,6 @@ end
 
 "enforces an mva limit on the power flow over a switch"
 
-
-
 function constraint_power_balance_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     bus_arcs_dcgrid = _PM.ref(pm, nw, :bus_arcs_dcgrid, i)
     bus_convs_dc = _PM.ref(pm, nw, :bus_convs_dc, i)
@@ -50,20 +48,6 @@ function constraint_converter_current_dc_ots(pm::_PM.AbstractPowerModel, i::Int;
     constraint_converter_current_dc_ots(pm, nw, i, Vmax, Imax)
 end
 
-#function constraint_converter_current_dc_ots(pm::_PM.AbstractACPModel, i::Int; nw::Int=_PM.nw_id_default)
-#    conv = _PM.ref(pm, nw, :convdc, i)
-#    Vmax = conv["Vmmax"]
-#    Imax = conv["Imax"]
-#    constraint_converter_current_dc_ots(pm, nw, i, Vmax, Imax)
-#end
-#
-#function constraint_converter_current_dc_ots(pm::_PM.AbstractDCPModel, i::Int; nw::Int=_PM.nw_id_default)
-#    conv = _PM.ref(pm, nw, :convdc, i)
-#    Vmax = conv["Vmmax"]
-#    Imax = conv["Imax"]
-#    constraint_converter_current_dc_ots(pm, nw, i, Vmax, Imax)
-#end
-
 function constraint_voltage_angle_difference_ots(pm::_PM.AbstractACPModel, i::Int; nw::Int=_PM.nw_id_default)
     branch = _PM.ref(pm,nw,:branch,i)
     f_bus = branch["f_bus"]
@@ -76,6 +60,7 @@ function constraint_voltage_angle_difference_ots(pm::_PM.AbstractACPModel, i::In
         constraint_voltage_angle_difference_ots(pm, nw, i, f_idx, buspair["angmin"], buspair["angmax"])
     #end
 end
+
 function constraint_voltage_angle_difference_ots(pm::_PM.AbstractDCPModel, i::Int; nw::Int=_PM.nw_id_default)
     branch = _PM.ref(pm,nw,:branch,i)
     f_bus = branch["f_bus"]
@@ -242,27 +227,29 @@ function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, i::Int; nw::I
 end
 
 function constraint_BS_OTS_branch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    
     switch_couple = _PM.ref(pm, nw, :switch_couples, i)
-    print("The switch_couple is "*"$switch_couple","\n")
-    print("\n")
-    print("\n")
+    #print("The switch_couple is "*"$switch_couple","\n")
+    #print("\n")
+    #print("\n")
     switch_ = _PM.ref(pm, nw, :switch)
-    print("The switch_ is "*"$switch_","\n")
-    print("\n")
-    print("\n")
+    #print("The switch_ is "*"$switch_","\n")
+    #print("\n")
+    #print("\n")
     branch_ = _PM.ref(pm, nw, :branch)
-    print("The branch_ is "*"$branch_","\n")
-    print("\n")
-    print("\n")
+    #print("The branch_ is "*"$branch_","\n")
+    #print("\n")
+    #print("\n")
     single_switch = switch_[switch_couple["f_sw"]]
-    print("The single_switch is "*"$single_switch","\n")
-    print("\n")
-    print("\n")
+    #print("The single_switch is "*"$single_switch","\n")
+    #print("\n")
+    #print("\n")
     #print(single_switch)
     branch_original = single_switch["original"]
-    print("The branch_original is "*"$branch_original","\n")
-    print("\n")
-    print("\n")
+    #print("The branch_original is "*"$branch_original","\n")
+    #print("\n")
+    #print("\n")
+    
     #if single_switch["auxiliary"] == "branch"
         constraint_BS_OTS_branch(pm, nw, switch_couple["f_sw"],switch_couple["t_sw"], 
         (branch_[branch_original]["index"],branch_[branch_original]["f_bus"],branch_[branch_original]["t_bus"]),

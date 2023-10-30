@@ -24,11 +24,6 @@ function constraint_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i, f
 
     JuMP.@constraint(pm.model, z*vm_fr == z*vm_to)
     JuMP.@constraint(pm.model, z*va_fr == z*va_to)
-
-    #JuMP.@constraint(pm.model, (vm_fr - vm_to) <= 100*(1 - z))
-    #JuMP.@constraint(pm.model, (va_fr - va_to) <= 100*(1 - z))
-    #JuMP.@constraint(pm.model, - 100*(1 - z) <= (vm_fr - vm_to))
-    #JuMP.@constraint(pm.model, - 100*(1 - z) <= (va_fr - va_to))
 end
 
 function constraint_dc_switch_state_closed(pm::_PM.AbstractACPModel, n::Int, f_busdc, t_busdc)

@@ -131,7 +131,6 @@ end
 
 
 function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2)
-   #function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2)
     z_1 = _PM.var(pm, n, :z_switch, i_1)
     z_2 = _PM.var(pm, n, :z_switch, i_2)
     
@@ -184,7 +183,6 @@ end
 function constraint_exclusivity_dc_switch_no_OTS(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2, i_3)
     z_1 = _PM.var(pm, n, :z_dcswitch, i_1)
     z_2 = _PM.var(pm, n, :z_dcswitch, i_2)
-    z_ZIL = _PM.var(pm, n, :z_dcswitch, i_3)
     
     JuMP.@constraint(pm.model, z_1 + z_2 == 1.0)
 end
