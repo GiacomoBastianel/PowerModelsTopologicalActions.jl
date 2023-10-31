@@ -1,3 +1,35 @@
-# PowerModelsTopologicalActions
+# PowerModelsTopologicalActions.jl
 
-Package based on PowerModels.jl and PowerModelsACDC.jl to perform AC and DC Optimal Transmission Switching (OTS) and AC and DC busbar splitting on AC/DC grids
+PowerModelsTopologicalActions.jl is a Julia/JuMP package to model AC and DC topological actions (Optimal Transmission Switching (OTS) and Busbar Splitting (BS)) for Steady-State Power Network Optimization. It is based on PowerModels.jl and PowerModelsACDC.jl. This consists of the first package being able to perform both OTS and BS on either part of AC/DC grids. 
+While the OTS is a well-established problem in the literature, the BS is still not explored widely, especially for the DC part of AC/DC grids.
+
+
+**Core Problem Spefications**
+* AC Optimal Transmission Switching
+* DC Optimal Transmission Switching
+* AC/DC Optimal Transmission Switching
+* AC Busbar Splitting
+* DC Busbar Splitting
+* AC/DC Busbar Splitting
+
+**Core network formulations**
+* AC (polar coordinates)
+* SOC Relaxation (W-space) (test phase)
+* QC Relaxation (W+L-space) (test phase)
+
+
+# Acknowledgements
+
+This code has been developed as part of WP1 of the ETF DIRECTIONS project from the FOD Economie of the Belgian Government. The primary developer is Giacomo Bastianel (@GiacomoBastianel) with support from the following contributors:
+
+Marta Vanin (@MartaVanin)
+
+
+# Citing PowerModelsTopologicalActions.jl
+
+If you find PowerModelsTopologicalActions useful in your work, we kindly request that you cite the following publication:
+
+'AC/DC Grids Steady-State Operations with Optimal Transmission Switching and Busbar Splitting', submitted for PSCC 2024.
+
+
+
