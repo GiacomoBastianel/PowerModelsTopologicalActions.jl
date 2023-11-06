@@ -1,1 +1,17 @@
 Manifest.toml
+
+Project.toml
+
+.DS_Store
+
+to_do.md
+
+src/formulations.md
+
+
+########################################
+#                macOS                 #
+########################################
+
+# General
+.DS_Store
