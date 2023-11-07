@@ -1,19 +1,13 @@
+/docs/Manifest.toml
+/docs/build/
 Manifest.toml
-
-Project.toml
-
-.DS_Store
-
 to_do.md
-
 src/formulations.md
-
-.vscode
-
+/.vscode/*
 
 ########################################
 #                macOS                 #
 ########################################
 
 # General
-.DS_Store
+*.DS_Store
