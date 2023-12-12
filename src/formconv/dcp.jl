@@ -1,4 +1,5 @@
 # DCP formulation
+#=
 function constraint_ohms_ots_dc_branch(pm::_PM.AbstractDCPModel, n::Int,  f_bus, t_bus, f_idx, t_idx, r, p)
     i, f_bus, t_bus = f_idx
     p_dc_fr = _PM.var(pm, n, :p_dcgrid, f_idx)
@@ -66,3 +67,4 @@ function constraint_power_balance_ac_switch(pm::_PM.AbstractDCPModel, n::Int, i:
         _PM.sol(pm, n, :bus, i)[:lam_kcl_r] = cstr_p
     end
 end
+=#

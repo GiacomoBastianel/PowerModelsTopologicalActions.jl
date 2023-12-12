@@ -1,9 +1,7 @@
 ###################### OTS Constraints ############################
-"""
-```
-sum(p_dcgrid[a] for a in bus_arcs_dcgrid) + sum(pconv_dc[c] for c in bus_convs_dc) == pd
-```
-"""
+function constraint_voltage_dc_ots(pm::_PM.AbstractPowerModel,  n::Int)
+end
+
 function constraint_power_balance_dc_ots(pm::_PM.AbstractPowerModel, n::Int, i::Int, bus_arcs_dcgrid, bus_convs_dc, pd)
     p_dcgrid = _PM.var(pm, n, :p_dcgrid)
     pconv_dc = _PM.var(pm, n, :pconv_dc)
@@ -92,7 +90,6 @@ function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractPowerModel, n::Int,
 
     JuMP.@constraint(pm.model, z*vm_fr == z*vm_to)
 end
-
 
 
 function constraint_dc_switch_state_open(pm::_PM.AbstractPowerModel, n::Int, f_idx)

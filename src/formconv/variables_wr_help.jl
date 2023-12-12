@@ -31,12 +31,12 @@ Model to approximate cross products of node voltages
 wdcr[(i,j)] <= wdc[i]*wdc[j]
 ```
 """
-function constraint_voltage_dc(pm::_PM.AbstractWRMModel, n::Int)
-    wdc = _PM.var(pm, n, :wdc)
-    wdcr = _PM.var(pm, n, :wdcr)
+function constraint_voltage_dc(pm::_PM.AbstractWRModel; nw::Int = _PM.nw_id_default)
+    wdc = _PM.var(pm, nw, :wdc)
+    wdcr = _PM.var(pm, nw, :wdcr)
 
-    for (i,j) in _PM.ids(pm, n, :buspairsdc)
-        JuMP.@constraint(pm.model, [ wdc[i]/sqrt(2), wdc[j]/sqrt(2), wdcr[(i,j)]/sqrt(2), wdcr[(i,j)]/sqrt(2)] in JuMP.RotatedSecondOrderCone() )
+    for (i,j) in _PM.ids(pm, nw, :buspairsdc)
+        JuMP.@constraint(pm.model, wdcr[(i,j)]^2 <= wdc[i]*wdc[j])
     end
 end
 
@@ -47,16 +47,15 @@ Limits dc branch current
 p[f_idx] <= wdc[f_bus] * Imax
 ```
 """
-function constraint_dc_branch_current(pm::_PM.AbstractWRMModel, n::Int, f_bus, f_idx, ccm_max, p)
+function constraint_dc_branch_current(pm::_PM.AbstractWRModel, n::Int, f_bus, f_idx, ccm_max, p)
     p_dc_fr = _PM.var(pm, n, :p_dcgrid, f_idx)
     wdc_fr = _PM.var(pm, n, :wdc, f_bus)
 
     JuMP.@constraint(pm.model, p_dc_fr <= wdc_fr * ccm_max * p^2)
 end
 
-
-function constraint_voltage_product_converter(pm::_PM.AbstractWRMModel, wr, wi, w_fr, w_to)
-    JuMP.@constraint(pm.model, [w_fr/sqrt(2), w_to/sqrt(2), wr, wi] in JuMP.RotatedSecondOrderCone())
+function constraint_voltage_product_converter(pm::_PM.AbstractWRModel, wr, wi, w_fr, w_to)
+    InfrastructureModels.relaxation_complex_product(pm.model, w_fr, w_to, wr, wi)
 end
 
 """
@@ -67,14 +66,28 @@ pconv_ac[i]^2 + pconv_dc[i]^2 <= wc[i] * iconv_ac_sq[i]
 pconv_ac[i]^2 + pconv_dc[i]^2 <= (Umax)^2 * (iconv_ac[i])^2
 ```
 """
-function constraint_converter_current(pm::_PM.AbstractWRMModel, n::Int,  i::Int, Umax, Imax)
+function constraint_converter_current(pm::_PM.AbstractWRModel, n::Int, i::Int, Umax, Imax)
     wc = _PM.var(pm, n,  :wc_ac, i)
     pconv_ac = _PM.var(pm, n,  :pconv_ac, i)
     qconv_ac = _PM.var(pm, n,  :qconv_ac, i)
     iconv = _PM.var(pm, n,  :iconv_ac, i)
     iconv_sq = _PM.var(pm, n,  :iconv_ac_sq, i)
 
-    JuMP.@constraint(pm.model, [wc/sqrt(2), iconv_sq/sqrt(2), pconv_ac, qconv_ac] in JuMP.RotatedSecondOrderCone())
-    JuMP.@constraint(pm.model, [Umax * iconv/sqrt(2), Umax * iconv/sqrt(2), pconv_ac, qconv_ac] in JuMP.RotatedSecondOrderCone())
+    JuMP.@constraint(pm.model, pconv_ac^2 + qconv_ac^2 <= wc * iconv_sq)
+    JuMP.@constraint(pm.model, pconv_ac^2 + qconv_ac^2 <= (Umax)^2 * iconv^2)
+    JuMP.@constraint(pm.model, iconv^2 <= iconv_sq)
     JuMP.@constraint(pm.model, iconv_sq <= iconv*Imax)
+end
+
+
+
+# This one is not influenced by the model
+function constraint_branch_limit_on_off(pm::_PM.AbstractWRModels, n::Int, i, f_idx, t_idx, pmax, pmin, imax, imin)
+    p_fr = _PM.var(pm, n, :p_dcgrid_ne)[f_idx]
+    p_to = _PM.var(pm, n, :p_dcgrid_ne)[t_idx]
+    z = _PM.var(pm, n, :branchdc_ne)[i]
+    JuMP.@constraint(pm.model,  p_fr <= pmax * z)
+    JuMP.@constraint(pm.model,  p_fr >= pmin * z)
+    JuMP.@constraint(pm.model,  p_to <= pmax * z)
+    JuMP.@constraint(pm.model,  p_to >= pmin * z)
 end

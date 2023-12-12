@@ -59,7 +59,7 @@ function build_acdcots_AC_DC(pm::_PM.AbstractPowerModel)
     end
     for i in _PM.ids(pm, :convdc)
         constraint_converter_losses_dc_ots(pm, i)
-        constraint_converter_current_dc_ots(pm,i)
+        constraint_converter_current_ots(pm,i)
         constraint_conv_transformer_dc_ots(pm, i)
         constraint_conv_reactor_dc_ots(pm, i)
         _PMACDC.constraint_conv_filter(pm, i)

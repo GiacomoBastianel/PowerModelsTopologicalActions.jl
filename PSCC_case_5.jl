@@ -2,11 +2,11 @@ using PowerModels; const _PM = PowerModels
 using Ipopt, JuMP
 using HiGHS, Gurobi, Juniper
 using PowerModelsACDC; const _PMACDC = PowerModelsACDC
-import PowerModelsTopologicalActionsII; const _PMTP = PowerModelsTopologicalActionsII
-using PowerModelsTopologicalActionsII   
+import PowerModelsTopologicalActionsII ; const _PMTP = PowerModelsTopologicalActionsII  
 using InfrastructureModels; const _IM = InfrastructureModels
 using JSON
 using Mosek, MosekTools
+
 #######################################################################################
 ## Define solver ##
 #######################################################################################
@@ -22,6 +22,7 @@ mosek = JuMP.optimizer_with_attributes(Mosek.Optimizer)
 #######################################################################################
 
 test_case_5_acdc = "case5_acdc.m"
+test_case_ac_only = "case24.m"
 
 #######################################################################################
 ## Parsing input data ##
@@ -36,10 +37,8 @@ data_original_5_acdc = _PM.parse_file(data_file_5_acdc)
 data_5_acdc = deepcopy(data_original_5_acdc)
 _PMACDC.process_additional_data!(data_5_acdc)
 
-
-# Configuration 2 -> Limiting branch 1 and increasing the generation cost of the gen 2
-#data_5_acdc["gen"]["2"]["cost"][1] = 10000.0
-#data_5_acdc["branch"]["1"]["rate_a"] = 0.5
+data_file_ac = joinpath(@__DIR__,"data_sources",test_case_ac_only)
+data_original_ac = _PM.parse_file(data_file_ac)
 
 #######################################################################################
 ## Optimal transmission switching models ##
@@ -47,14 +46,22 @@ _PMACDC.process_additional_data!(data_5_acdc)
 # AC OPF for ACDC grid
 result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s_dual)
 
+result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,ipopt; setting = s_dual)
+
 # Solving AC OTS with OTS only on the AC grid part
 result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,SOCWRPowerModel,juniper; setting = s)
+result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,juniper; setting = s)
+
 
 # Solving AC OTS with OTS only on the DC grid part 
 result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
 
+
 # Solving AC OTS with OTS on both AC and DC grid part
 result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,SOCWRPowerModel,juniper; setting = s)
+result_AC_DC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,QCRMPowerModel,juniper; setting = s)
 
 ##############
 

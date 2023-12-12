@@ -27,7 +27,6 @@ function build_acdcots_DC(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dc_converter(pm)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
-
     # OTS variables for DC grid
     variable_dc_branch_indicator(pm)
     variable_dc_conv_indicator(pm)
@@ -36,6 +35,8 @@ function build_acdcots_DC(pm::_PM.AbstractPowerModel)
 
     _PM.constraint_model_voltage(pm)
     _PMACDC.constraint_voltage_dc(pm)
+
+    #constraint_voltage_dc_ots(pm)
 
     for i in _PM.ids(pm, :ref_buses)
         _PM.constraint_theta_ref(pm, i)
@@ -61,7 +62,7 @@ function build_acdcots_DC(pm::_PM.AbstractPowerModel)
     end
     for i in _PM.ids(pm, :convdc)
         constraint_converter_losses_dc_ots(pm, i)
-        constraint_converter_current_dc_ots(pm,i)
+        constraint_converter_current_ots(pm,i)
         constraint_conv_transformer_dc_ots(pm, i)
         constraint_conv_reactor_dc_ots(pm, i)
         _PMACDC.constraint_conv_filter(pm, i)
