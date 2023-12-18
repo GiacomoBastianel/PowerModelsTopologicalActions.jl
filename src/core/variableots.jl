@@ -202,36 +202,20 @@ function variable_branch_ots(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_defau
 end
 
 
+"variable: `w_du[j]` for `j` in `convdc`"
 function variable_voltage_slack_ots(pm::_PM.AbstractWModels; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=false)
     w_du_ots = _PM.var(pm, nw)[:w_du_ots] = JuMP.@variable(pm.model,
-    [i in _PM.ids(pm, nw, :convdc)], base_name="$(nw)_w_du",
+    [i in _PM.ids(pm, nw, :convdc)], base_name="$(nw)_w_du_ots",
     start = 0,  # check
     )
     if bounded
         for (c, convdc) in _PM.ref(pm, nw, :convdc)
-            JuMP.set_lower_bound(w_du_ots[c], 0) # check
-            JuMP.set_upper_bound(w_du_ots[c], 2) # check
+            JuMP.set_lower_bound(w_du[c], 0) # check
+            JuMP.set_upper_bound(w_du[c], 2) # check
         end
     end
-    report && _IM.sol_component_value(pm, _PM.pm_it_sym, nw, :convdc, :w_du_ots, _PM.ids(pm, nw, :convdc), w_du_ots)
+    report && _IM.sol_component_value(pm, _PM.pm_it_sym, nw, :convdc, :wdu_ots, _PM.ids(pm, nw, :convdc), w_du_ots)
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ########## Busbar splitting variables ###########
 # AC grid -> no need for new variables, already implemented in PowerModels, copying them here to modify them easily

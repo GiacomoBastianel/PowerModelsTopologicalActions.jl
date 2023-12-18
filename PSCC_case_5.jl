@@ -50,8 +50,8 @@ result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,ipopt; sett
 
 # Solving AC OTS with OTS only on the AC grid part
 result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper; setting = s)
-result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,SOCWRPowerModel,juniper; setting = s)
-result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,juniper; setting = s)
+result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
+result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
 
 
 # Solving AC OTS with OTS only on the DC grid part 

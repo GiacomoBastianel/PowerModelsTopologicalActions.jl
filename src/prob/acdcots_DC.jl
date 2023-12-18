@@ -30,6 +30,7 @@ function build_acdcots_DC(pm::_PM.AbstractPowerModel)
     # OTS variables for DC grid
     variable_dc_branch_indicator(pm)
     variable_dc_conv_indicator(pm)
+    variable_voltage_slack_ots(pm)
 
     _PM.objective_min_fuel_cost(pm)
 
@@ -65,7 +66,7 @@ function build_acdcots_DC(pm::_PM.AbstractPowerModel)
         constraint_converter_current_ots(pm,i)
         constraint_conv_transformer_dc_ots(pm, i)
         constraint_conv_reactor_dc_ots(pm, i)
-        _PMACDC.constraint_conv_filter(pm, i)
+        constraint_conv_filter_dc_ots(pm, i)
         constraint_converter_limit_on_off_dc_ots(pm,i)
         if pm.ref[:it][:pm][:nw][_PM.nw_id_default][:convdc][i]["islcc"] == 1
             _PMACDC.constraint_conv_firing_angle(pm, i)

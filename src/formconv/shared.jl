@@ -3,45 +3,11 @@ function constraint_converter_losses_dc_ots(pm::_PM.AbstractWModels, n::Int, i::
     pconv_ac = _PM.var(pm, n, :pconv_ac, i)
     pconv_dc = _PM.var(pm, n, :pconv_dc, i)
     iconv = _PM.var(pm, n, :iconv_ac, i)
+    iconv_sq = _PM.var(pm, n, :iconv_ac_sq, i)
     z = _PM.var(pm, n, :z_conv_dc, i)
 
-    JuMP.@NLconstraint(pm.model, pconv_ac + pconv_dc == z*a + b*iconv + c*iconv^2)
+    JuMP.@constraint(pm.model, pconv_ac + pconv_dc == a*z + b*iconv + c*iconv_sq)
 end
-
-#=
-function constraint_conv_transformer_dc_ots(pm::_PM.AbstractWRModels, n::Int, i::Int, rtf, xtf, acbus, tm, transformer)
-    ptf_fr = _PM.var(pm, n, :pconv_tf_fr, i)
-    qtf_fr = _PM.var(pm, n, :qconv_tf_fr, i)
-    ptf_to = _PM.var(pm, n, :pconv_tf_to, i)
-    qtf_to = _PM.var(pm, n, :qconv_tf_to, i)
-    z = _PM.var(pm, n, :z_conv_dc, i)
-
-    w = _PM.var(pm, n,  :w, acbus)  # vm^2
-    w_du_ots = _PM.var(pm, n,  :w_du_ots, i)  # vm^2
-    wf = _PM.var(pm, n,  :wf_ac, i)   # vmf * vmf
-    wrf = _PM.var(pm, n,  :wrf_ac, i) # vm*vmf*cos(va-vaf) =  vmf*vm*cos(vaf-va)
-    wif = _PM.var(pm, n,  :wif_ac, i) # vm*vmf*sin(va-vaf) = -vmf*vm*sin(vaf-va)
-
-    ztf = rtf + im*xtf
-    if transformer
-        ytf = 1/(rtf + im*xtf)
-        gtf = real(ytf)
-        btf = imag(ytf)
-        c1, c2, c3, c4 = _PMACDC.ac_power_flow_constraints_w(pm, gtf, btf, w_du_ots, wf, wrf, wif, ptf_fr, ptf_to, qtf_fr, qtf_to, tm)
-       
-        _IM.relaxation_equality_on_off(pm.model, w, w_du_ots, z)
-        JuMP.@constraint(pm.model, w_du_ots >= z*JuMP.lower_bound(w))
-        JuMP.@constraint(pm.model, w_du_ots <= z*JuMP.upper_bound(w))
-        constraint_voltage_product_converter_ots(pm, wrf, wif, wf, w, z)
-
-    else
-        pcon, qcon = _PMACDC.constraint_lossless_section(pm, w_du_ots, wf, wrf, wif, ptf_fr, ptf_to, qtf_fr, qtf_to)
-        _IM.relaxation_equality_on_off(pm.model, w, w_du_ots, z)
-        JuMP.@constraint(pm.model, w_du_ots >= z*JuMP.lower_bound(w))
-        JuMP.@constraint(pm.model, w_du_ots <= z*JuMP.upper_bound(w))
-    end
-end
-=#
 
 function constraint_conv_transformer_dc_ots(pm::_PM.AbstractWRModels, n::Int, i::Int, rtf, xtf, acbus, tm, transformer)
     ptf_fr = _PM.var(pm, n,  :pconv_tf_fr, i)
@@ -50,20 +16,30 @@ function constraint_conv_transformer_dc_ots(pm::_PM.AbstractWRModels, n::Int, i:
     qtf_to = _PM.var(pm, n,  :qconv_tf_to, i)
 
     w = _PM.var(pm, n,  :w, acbus)  # vm^2
+    w_du = _PM.var(pm, n, :w_du_ots, i)
     wf = _PM.var(pm, n,  :wf_ac, i)   # vmf * vmf
     wrf = _PM.var(pm, n,  :wrf_ac, i) # vm*vmf*cos(va-vaf) =  vmf*vm*cos(vaf-va)
     wif = _PM.var(pm, n,  :wif_ac, i) # vm*vmf*sin(va-vaf) = -vmf*vm*sin(vaf-va)
 
+    z = _PM.var(pm, n, :z_conv_dc, i)
     ztf = rtf + im*xtf
+
     if transformer
         ytf = 1/(rtf + im*xtf)
         gtf = real(ytf)
         btf = imag(ytf)
-        c1, c2, c3, c4 = _PMACDC.ac_power_flow_constraints_w(pm, gtf, btf, w, wf, wrf, wif, ptf_fr, ptf_to, qtf_fr, qtf_to, tm)
-        _PMACDC.constraint_voltage_product_converter(pm, wrf, wif, wf, w)
-        _PMACDC.constraint_voltage_product_converter(pm, wrf, wif, wf, w)
+        c1, c2, c3, c4 = ac_power_flow_constraints_w(pm, gtf, btf, w_du, wf, wrf, wif, ptf_fr, ptf_to, qtf_fr, qtf_to, tm)
+
+        _IM.relaxation_equality_on_off(pm.model, w, w_du, z)
+        JuMP.@constraint(pm.model, w_du >= z*JuMP.lower_bound(w))
+        JuMP.@constraint(pm.model, w_du <= z*JuMP.upper_bound(w))
+        constraint_voltage_product_converter_ots(pm, wrf, wif, wf, w, z)
+
     else
-        pcon, qcon = _PMACDC.constraint_lossless_section(pm, w, wf, wrf, wif, ptf_fr, ptf_to, qtf_fr, qtf_to)
+        pcon, qcon = constraint_lossless_section_ots(pm, w_du, wf, wrf, wif, ptf_fr, ptf_to, qtf_fr, qtf_to)
+        _IM.relaxation_equality_on_off(pm.model, w, w_du, z)
+        JuMP.@constraint(pm.model, w_du >= z*JuMP.lower_bound(w))
+        JuMP.@constraint(pm.model, w_du <= z*JuMP.upper_bound(w))
     end
 end
 
@@ -72,12 +48,10 @@ function constraint_conv_filter_dc_ots(pm::_PM.AbstractWModels, n::Int, i::Int, 
     qpr_fr = _PM.var(pm, n, :qconv_pr_fr, i)
     ptf_to = _PM.var(pm, n, :pconv_tf_to, i)
     qtf_to = _PM.var(pm, n, :qconv_tf_to, i)
-    z_DC = _PM.var(pm, n, :z_conv_dc, i)
-
-    vmf = _PM.var(pm, n, :vmf, i)
+    wf = _PM.var(pm, n, :wf_ac, i)
 
     JuMP.@constraint(pm.model,   ppr_fr + ptf_to == 0 )
-    JuMP.@NLconstraint(pm.model, qpr_fr + qtf_to +  (-bv) * filter *vmf^2 == 0)
+    JuMP.@constraint(pm.model, qpr_fr + qtf_to +  (-bv) * filter * wf == 0)
 end
 
 
@@ -146,6 +120,7 @@ function constraint_conv_firing_angle_ots(pm::_PM.AbstractWModels, n::Int, i::In
     JuMP.@constraint(pm.model, qc >= Q1 + (pc-P1) * coeff )
 end
 
+#=
 function constraint_conv_transformer_ots(pm::_PM.AbstractWRModels, n::Int, i::Int, rtf, xtf, acbus, tm, transformer)
     ptf_fr = _PM.var(pm, n, :pconv_tf_fr, i)
     qtf_fr = _PM.var(pm, n, :qconv_tf_fr, i)
@@ -177,7 +152,7 @@ function constraint_conv_transformer_ots(pm::_PM.AbstractWRModels, n::Int, i::In
         JuMP.@constraint(pm.model, w_du <= z*JuMP.upper_bound(w))
     end
 end
-
+=#
 ############################################# BUSBAR SPLITTING CONSTRAINTS ###################################
 #=
 ## ACDC switch
