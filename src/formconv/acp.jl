@@ -107,3 +107,6 @@ function constraint_converter_current_ots(pm::_PM.AbstractACPModel, n::Int, i::I
 
     JuMP.@NLconstraint(pm.model, pconv_ac^2 + qconv_ac^2 == z_dc * vmc^2 * iconv^2)
 end
+
+function variable_voltage_slack_ots(pm::_PM.AbstractACPModel; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=false)
+end

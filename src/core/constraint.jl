@@ -82,16 +82,6 @@ function constraint_dc_switch_thermal_limit(pm::_PM.AbstractPowerModel, n::Int, 
 end
 
 
-
-function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractPowerModel, n::Int, i, f_bus, t_bus, vad_min, vad_max)
-    vm_fr = _PM.var(pm, n, :vdcm, f_busdc)
-    vm_to = _PM.var(pm, n, :vdcm, t_busdc)
-    z = _PM.var(pm, n, :z_dcswitch, i)
-
-    JuMP.@constraint(pm.model, z*vm_fr == z*vm_to)
-end
-
-
 function constraint_dc_switch_state_open(pm::_PM.AbstractPowerModel, n::Int, f_idx)
     psw = _PM.var(pm, n, :psw, f_idx)
 

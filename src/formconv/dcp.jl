@@ -68,3 +68,28 @@ function constraint_power_balance_ac_switch(pm::_PM.AbstractDCPModel, n::Int, i:
     end
 end
 =#
+function variable_voltage_slack_ots(pm::_PM.AbstractDCPModel; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=true)
+    va_du_ots = _PM.var(pm, nw)[:va_du_ots] = JuMP.@variable(pm.model,
+    [i in _PM.ids(pm, nw, :convdc)], base_name="$(nw)_va_du",
+    lower_bound = -2*pi,
+    upper_bound = 2*pi,
+    start = 0,
+    )
+    report && _IM.sol_component_value(pm, _PM.pm_it_sym, nw, :convdc, :va, _PM.ids(pm, nw, :convdc), va_ne)
+
+    vaf_ots = _PM.var(pm, nw)[:vaf_du_ots] = JuMP.@variable(pm.model,
+    [i in _PM.ids(pm, nw, :convdc_ne)], base_name="$(nw)_vaf_du",
+    lower_bound = -2*pi,
+    upper_bound = 2*pi,
+    start = 0,
+    )
+    report && _IM.sol_component_value(pm, _PM.pm_it_sym, nw, :convdc, :vaf, _PM.ids(pm, nw, :convdc), vaf)
+
+    vac_ots = _PM.var(pm, nw)[:vac_du_ots] = JuMP.@variable(pm.model,
+    [i in _PM.ids(pm, nw, :convdc)], base_name="$(nw)_vac_du",
+    lower_bound = -2*pi,
+    upper_bound = 2*pi,
+    start = 0,
+    )
+    report && _IM.sol_component_value(pm, _PM.pm_it_sym, nw, :convdc, :vac, _PM.ids(pm, nw, :convdc), vac)
+end

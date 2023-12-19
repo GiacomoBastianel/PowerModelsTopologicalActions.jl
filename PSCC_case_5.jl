@@ -45,7 +45,6 @@ data_original_ac = _PM.parse_file(data_file_ac)
 #######################################################################################
 # AC OPF for ACDC grid
 result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s_dual)
-
 result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,ipopt; setting = s_dual)
 
 # Solving AC OTS with OTS only on the AC grid part
@@ -56,6 +55,8 @@ result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,gurobi; set
 
 # Solving AC OTS with OTS only on the DC grid part 
 result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
+result_DC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,QCRMPowerModel,juniper; setting = s)
 
 
 # Solving AC OTS with OTS on both AC and DC grid part
@@ -91,12 +92,15 @@ data_busbars_ac_split_5_acdc = deepcopy(data_5_acdc)
 data_busbars_ac_split_5_acdc_no_OTS = deepcopy(data_5_acdc)
 
 # Selecting which busbars are split
-splitted_bus_ac = [2,4]
+splitted_bus_ac = 2
 data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
 
 # One can select whether the branches originally linked to the split busbar are reconnected to either part of the split busbar or not
 # Reconnect all the branches
 result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper)
+
+result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,SOCWRPowerModel,gurobi)
+result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,QCRMPowerModel,gurobi)
 
 # Not necessary to reconnect all the branches
 #result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC_no_OTS(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper)
@@ -120,6 +124,10 @@ data_busbars_dc_split_5_acdc , switches_couples_dc_5,  extremes_ZILs_5_dc  = _PM
 # One can select whether the branches originally linked to the split busbar are reconnected to either part of the split busbar or not
 # Reconnect all the branches
 result_AC_DC_5_switches_DC  = _PMTP.run_acdcsw_DC(data_busbars_dc_split_5_acdc, ACPPowerModel,juniper)
+
+result_AC_DC_5_switches_DC  = _PMTP.run_acdcsw_DC(data_busbars_dc_split_5_acdc, SOCWRPowerModel,gurobi)
+result_AC_DC_5_switches_DC  = _PMTP.run_acdcsw_DC(data_busbars_dc_split_5_acdc, QCRMPowerModel,gurobi)
+
 
 # Not necessary to reconnect all the branches
 #result_AC_DC_5_switches_DC  = _PMTP.run_acdcsw_AC_DC_no_OTS(data_busbars_dc_split_5_acdc, ACPPowerModel,juniper)

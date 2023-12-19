@@ -204,7 +204,7 @@ end
 
 "variable: `w_du[j]` for `j` in `convdc`"
 function variable_voltage_slack_ots(pm::_PM.AbstractWModels; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=false)
-    w_du_ots = _PM.var(pm, nw)[:w_du_ots] = JuMP.@variable(pm.model,
+    w_du = _PM.var(pm, nw)[:w_du_ots] = JuMP.@variable(pm.model,
     [i in _PM.ids(pm, nw, :convdc)], base_name="$(nw)_w_du_ots",
     start = 0,  # check
     )
@@ -214,7 +214,7 @@ function variable_voltage_slack_ots(pm::_PM.AbstractWModels; nw::Int=_PM.nw_id_d
             JuMP.set_upper_bound(w_du[c], 2) # check
         end
     end
-    report && _IM.sol_component_value(pm, _PM.pm_it_sym, nw, :convdc, :wdu_ots, _PM.ids(pm, nw, :convdc), w_du_ots)
+    report && _IM.sol_component_value(pm, _PM.pm_it_sym, nw, :convdc, :w_du_ots, _PM.ids(pm, nw, :convdc), w_du)
 end
 
 ########## Busbar splitting variables ###########

@@ -29,6 +29,7 @@ function build_acdcots_AC_DC(pm::_PM.AbstractPowerModel)
 
     variable_dc_branch_indicator(pm)
     variable_dc_conv_indicator(pm)
+    variable_voltage_slack_ots(pm)
 
     _PM.objective_min_fuel_cost(pm)
 

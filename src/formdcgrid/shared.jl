@@ -98,93 +98,45 @@ function constraint_ohms_ots_dc_branch(pm::_PM.AbstractWRModels, n::Int,  f_bus,
     end
 end
 
+function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i, f_busdc, t_busdc)
+    wdc_fr = _PM.var(pm, n, :wdc, f_busdc)
+    wdc_to = _PM.var(pm, n, :wdc, t_busdc)
+    z = _PM.var(pm, n, :z_dcswitch, i)
 
-"""
-```
-sum(p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(pconv_grid_ac_ne[c] for c in bus_convs_ac_ne) == sum(pg[g] for g in bus_gens)  - pd - gs*w
-sum(q[a] for a in bus_arcs) + sum(qconv_grid_ac[c] for c in bus_convs_ac) + sum(qconv_grid_ac_ne[c] for c in bus_convs_ac_ne) == sum(qg[g] for g in bus_gens)  - qd + bs*w
-```
-"""
-# DC OTS only
-function constraint_power_balance_ac_dc_ots(pm::_PM.AbstractWModels, n::Int, i::Int, bus_arcs, bus_arcs_dc, bus_gens, bus_convs_ac, bus_convs_ac_ne, bus_loads, bus_shunts, pd, qd, gs, bs)
+    JuMP.@constraint(pm.model, z*wdc_fr == z*wdc_to)
+end
+
+function constraint_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i, f_bus, t_bus, vad_min, vad_max)
+    #vm_fr = _PM.var(pm, n, :vm, f_bus)
+    #vm_to = _PM.var(pm, n, :vm, t_bus)
+    w_fr = _PM.var(pm, n, :w, f_bus)
+    w_to = _PM.var(pm, n, :w, t_bus)
+    z = _PM.var(pm, n, :z_switch, i)
+
+    JuMP.@constraint(pm.model, z*w_fr == z*w_to)
+    #JuMP.@constraint(pm.model, z*va_fr == z*va_to)
+end
+
+
+function constraint_power_balance_ac_switch(pm::_PM.AbstractWRModels, n::Int, i::Int, bus_arcs, bus_arcs_sw, bus_gens, bus_convs_ac, bus_loads, bus_shunts, pd, qd, gs, bs)
     w = _PM.var(pm, n, :w, i)
-    p = _PM.var(pm, n, :p)
-    q = _PM.var(pm, n, :q)
-    pg = _PM.var(pm, n, :pg)
-    qg = _PM.var(pm, n, :qg)
-    pconv_grid_ac = _PM.var(pm, n, :pconv_tf_fr)
-    qconv_grid_ac = _PM.var(pm, n, :qconv_tf_fr)
-    pconv_grid_ac_ne = _PM.var(pm, n, :pconv_tf_fr_ne)
-    qconv_grid_ac_ne = _PM.var(pm, n, :qconv_tf_fr_ne)
+    p = _PM.var(pm, n,  :p)
+    q = _PM.var(pm, n,  :q)
+    pg = _PM.var(pm, n,  :pg)
+    qg = _PM.var(pm, n,  :qg)
+    pconv_grid_ac = _PM.var(pm, n,  :pconv_tf_fr)
+    qconv_grid_ac = _PM.var(pm, n,  :qconv_tf_fr)
+    psw  = _PM.var(pm, n, :psw)
+    qsw  = _PM.var(pm, n, :qsw)
 
-    z = _PM.var(pm, n, :z_conv_dc, i)
-    
-    cstr_p = JuMP.@constraint(pm.model, sum(p[a] for a in bus_arcs) + sum(z[c]*pconv_grid_ac[c] for c in bus_convs_ac)  == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*w)
-    cstr_q = JuMP.@constraint(pm.model, sum(q[a] for a in bus_arcs) + sum(z[c]*qconv_grid_ac[c] for c in bus_convs_ac)  == sum(qg[g] for g in bus_gens)  - sum(qd[d] for d in bus_loads) + sum(bs[s] for s in bus_shunts)*w)
+    cstr_p = JuMP.@constraint(pm.model, sum(p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(psw[sw] for sw in bus_arcs_sw) == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*w)
+    cstr_q = JuMP.@constraint(pm.model, sum(q[a] for a in bus_arcs) + sum(qconv_grid_ac[c] for c in bus_convs_ac) + sum(qsw[sw] for sw in bus_arcs_sw) == sum(qg[g] for g in bus_gens)  - sum(qd[d] for d in bus_loads) + sum(bs[s] for s in bus_shunts)*w)
 
     if _IM.report_duals(pm)
         _PM.sol(pm, n, :bus, i)[:lam_kcl_r] = cstr_p
         _PM.sol(pm, n, :bus, i)[:lam_kcl_i] = cstr_q
     end
 end
-"""
-```
-sum(p[a] for a in bus_arcs) + sum(p_ne[a] for a in bus_arcs_ne) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(pconv_grid_ac_ne[c] for c in bus_convs_ac_ne) == sum(pg[g] for g in bus_gens)  - pd - gs*w
-sum(q[a] for a in bus_arcs) + sum(q_ne[a] for a in bus_arcs_ne) + sum(qconv_grid_ac[c] for c in bus_convs_ac) + sum(qconv_grid_ac_ne[c] for c in bus_convs_ac_ne) == sum(qg[g] for g in bus_gens)  - qd + bs*w
-```
-"""
-# AC OTS only
-function constraint_power_balance_ac_ots_dc(pm::_PM.AbstractWModels, n::Int, i::Int, bus_arcs, bus_arcs_dc, bus_gens, bus_convs_ac, bus_convs_ac_ne, bus_loads, bus_shunts, pd, qd, gs, bs)
-    w = _PM.var(pm, n, :w, i)
-    p = _PM.var(pm, n, :p)
-    q = _PM.var(pm, n, :q)
-    pg = _PM.var(pm, n, :pg)
-    qg = _PM.var(pm, n, :qg)
-    pconv_grid_ac = _PM.var(pm, n, :pconv_tf_fr)
-    qconv_grid_ac = _PM.var(pm, n, :qconv_tf_fr)
-    pconv_grid_ac_ne = _PM.var(pm, n, :pconv_tf_fr_ne)
-    qconv_grid_ac_ne = _PM.var(pm, n, :qconv_tf_fr_ne)
-
-    z = _PM.var(pm, n, :z_branch, i)
-    
-    cstr_p = JuMP.@constraint(pm.model, sum(z[a]*p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac)  == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*w)
-    cstr_q = JuMP.@constraint(pm.model, sum(z[a]*q[a] for a in bus_arcs) + sum(qconv_grid_ac[c] for c in bus_convs_ac)  == sum(qg[g] for g in bus_gens)  - sum(qd[d] for d in bus_loads) + sum(bs[s] for s in bus_shunts)*w)
-
-    if _IM.report_duals(pm)
-        _PM.sol(pm, n, :bus, i)[:lam_kcl_r] = cstr_p
-        _PM.sol(pm, n, :bus, i)[:lam_kcl_i] = cstr_q
-    end
-end
-
-# AC/DC OTS
-function constraint_power_balance_ac_ots_dc_ots(pm::_PM.AbstractWModels, n::Int, i::Int, bus_arcs, bus_arcs_dc, bus_gens, bus_convs_ac, bus_convs_ac_ne, bus_loads, bus_shunts, pd, qd, gs, bs)
-    w = _PM.var(pm, n, :w, i)
-    p = _PM.var(pm, n, :p)
-    q = _PM.var(pm, n, :q)
-    pg = _PM.var(pm, n, :pg)
-    qg = _PM.var(pm, n, :qg)
-    pconv_grid_ac = _PM.var(pm, n, :pconv_tf_fr)
-    qconv_grid_ac = _PM.var(pm, n, :qconv_tf_fr)
-    pconv_grid_ac_ne = _PM.var(pm, n, :pconv_tf_fr_ne)
-    qconv_grid_ac_ne = _PM.var(pm, n, :qconv_tf_fr_ne)
-
-    z_ac = _PM.var(pm, n, :z_branch, i)
-    z = _PM.var(pm, n, :z_conv_dc, i)
-    
-    cstr_p = JuMP.@constraint(pm.model, sum(z_ac[a]*p[a] for a in bus_arcs) + sum(z[c]*pconv_grid_ac[c] for c in bus_convs_ac)  == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*w)
-    cstr_q = JuMP.@constraint(pm.model, sum(z_ac[a]*q[a] for a in bus_arcs) + sum(z[c]*qconv_grid_ac[c] for c in bus_convs_ac)  == sum(qg[g] for g in bus_gens)  - sum(qd[d] for d in bus_loads) + sum(bs[s] for s in bus_shunts)*w)
-
-    if _IM.report_duals(pm)
-        _PM.sol(pm, n, :bus, i)[:lam_kcl_r] = cstr_p
-        _PM.sol(pm, n, :bus, i)[:lam_kcl_i] = cstr_q
-    end
-end
-
-
-
-
-
-
 
 
 
