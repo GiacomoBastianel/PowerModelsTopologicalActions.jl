@@ -93,6 +93,11 @@ data_busbars_ac_split_5_acdc_no_OTS = deepcopy(data_5_acdc)
 
 # Selecting which busbars are split
 splitted_bus_ac = 2
+
+
+data_5_acdc, extremes_ZIL = AC_busbar_split_more_buses_fixed(data_5_acdc,splitted_bus_ac)
+split_elements = elements_AC_busbar_split(data_5_acdc)
+
 data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
 
 # One can select whether the branches originally linked to the split busbar are reconnected to either part of the split busbar or not
@@ -153,9 +158,13 @@ data_busbars_ac_dc_split_5_acdc_ac_dc_sw , dc_switches_couples_ac_dc_5, dc_extre
 # One can select whether the branches originally linked to the split busbar are reconnected to either part of the split busbar or not
 # Reconnect all the branches
 result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_5_acdc, ACPPowerModel,juniper)
+result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_5_acdc, SOCWRPowerModel,gurobi)
+result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC(data_busbars_ac_dc_split_5_acdc, QCRMPowerModel,gurobi)
 
 # Not necessary to reconnect all the branches
 result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC_no_OTS(data_busbars_ac_dc_split_5_acdc, ACPPowerModel,juniper)
+result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC_no_OTS(data_busbars_ac_dc_split_5_acdc, SOCWRPowerModel,gurobi)
+result_AC_DC_5_switch_AC_DC  = _PMTP.run_acdcsw_AC_DC_no_OTS(data_busbars_ac_dc_split_5_acdc, QCRMPowerModel,gurobi)
 
 #=
 # If one wants to check the status of the switches. To be improved to make it easier and faster for the user to see the resulting grid topology
