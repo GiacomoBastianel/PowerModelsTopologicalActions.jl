@@ -294,10 +294,10 @@ end
 
 function constraint_switch_voltage_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch = _PM.ref(pm, nw, :switch, i)
-    vad_min = _PM.ref(pm, nw, :off_angmin)
-    vad_max = _PM.ref(pm, nw, :off_angmax)
+    #vad_min = _PM.ref(pm, nw, :off_angmin)
+    #vad_max = _PM.ref(pm, nw, :off_angmax)
 
-    constraint_switch_voltage_on_off(pm, nw, i, switch["f_bus"], switch["t_bus"], vad_min, vad_max)
+    constraint_switch_voltage_on_off(pm, nw, i, switch["f_bus"], switch["t_bus"])
 end
 
 function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)

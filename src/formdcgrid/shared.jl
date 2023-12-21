@@ -106,7 +106,7 @@ function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i
     JuMP.@constraint(pm.model, z*wdc_fr == z*wdc_to)
 end
 
-function constraint_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i, f_bus, t_bus, vad_min, vad_max)
+function constraint_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i, f_bus, t_bus)
     #vm_fr = _PM.var(pm, n, :vm, f_bus)
     #vm_to = _PM.var(pm, n, :vm, t_bus)
     w_fr = _PM.var(pm, n, :w, f_bus)

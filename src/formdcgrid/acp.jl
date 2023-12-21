@@ -15,7 +15,7 @@ function constraint_ohms_ots_dc_branch(pm::_PM.AbstractACPModel, n::Int, f_bus, 
     end
 end
 
-function constraint_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus, vad_min, vad_max)
+function constraint_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus)
     vm_fr = _PM.var(pm, n, :vm, f_bus)
     vm_to = _PM.var(pm, n, :vm, t_bus)
     va_fr = _PM.var(pm, n, :va, f_bus)
