@@ -64,6 +64,8 @@ data_ac_fixed["branch"]["5"]["f_bus"] = extremes_ZIL["2"][2]
 
 result_ac_fixed = _PMTP.run_acdcsw_AC_fixed(data_ac_fixed,ACPPowerModel,juniper)
 
+result_ac_fixed_diff = _PMTP.run_acdcsw_AC_fixed_diff(data_ac_fixed,ACPPowerModel,juniper)
+
 ###############################
 ############# DC ##############
 ###############################

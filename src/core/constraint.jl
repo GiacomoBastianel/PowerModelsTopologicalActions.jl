@@ -212,5 +212,14 @@ function constraint_power_balance_dc_switch(pm::_PM.AbstractPowerModel, n::Int, 
     JuMP.@constraint(pm.model, sum(p_dcgrid[a] for a in bus_arcs_dcgrid) + sum(pconv_dc[c] for c in bus_convs_dc) + sum(psw[sw] for sw in bus_arcs_sw_dc) == (-pd))
 end
 
+function constraint_switch_difference_voltage_angles(pm::_PM.AbstractPowerModel, n::Int, switch, diff_vas)
+    va_f = _PM.var(pm, n, :va, switch["f_bus"])
+    va_t = _PM.var(pm, n, :va, switch["t_bus"])
+
+
+    JuMP.@constraint(pm.model, va_f - va_t <= diff_vas)
+    JuMP.@constraint(pm.model, - diff_vas <= va_f - va_t)
+end
+
 
 

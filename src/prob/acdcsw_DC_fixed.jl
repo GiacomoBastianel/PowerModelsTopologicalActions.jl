@@ -1,5 +1,5 @@
 export run_acdcsw_DC_fixed
-export run_acdcsw_DC
+export run_acdcsw_DC_fixed_diff
 
 
 # DC Busbar splitting for AC/DC grid

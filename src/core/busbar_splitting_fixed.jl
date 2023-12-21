@@ -76,6 +76,7 @@ function AC_busbar_split_more_buses_fixed(data,bus_to_be_split) # one can split 
         push!(data["switch"]["$switch_id"]["source_id"],"switch")
         push!(data["switch"]["$switch_id"]["source_id"],switch_id)
         data["switch"]["$switch_id"]["ZIL"] = true
+        data["switch"]["$switch_id"]["maximum_angle"] = pi/6 # 30 degrees
     end
     return data, extremes_ZIL
 end    
@@ -203,6 +204,7 @@ function DC_busbar_split_more_buses_fixed(data,bus_to_be_split) # one can split 
         push!(data["dcswitch"]["$switch_id"]["source_id"],"dcswitch")
         push!(data["dcswitch"]["$switch_id"]["source_id"],switch_id)
         data["dcswitch"]["$switch_id"]["ZIL"] = true
+        data["dcswitch"]["$switch_id"]["maximum_angle"] = pi/6 # 30 degrees
     end
 
     return data, extremes_ZIL_dc
