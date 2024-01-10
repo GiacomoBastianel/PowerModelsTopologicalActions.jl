@@ -372,3 +372,34 @@ function constraint_switch_difference_voltage_angles(pm::_PM.AbstractPowerModel,
     constraint_switch_difference_voltage_angles(pm, nw, switch, switch["maximum_angle"])
 end
 
+
+function constraint_ac_switch_power(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :switch, i)
+    f_idx = (i, switch["f_bus"], switch["t_bus"])
+    
+    constraint_ac_switch_power(pm, nw, i, switch["f_bus"], switch["t_bus"])
+end
+
+function constraint_current_switch_thermal_limits(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :switch, i)
+    #f_idx = (i, switch["f_bus"], switch["t_bus"])
+    rate_sw = switch["rate_sw"]
+    
+    constraint_current_switch_thermal_limits(pm, nw, i, switch["f_bus"], switch["t_bus"], rate_sw, rate_sw)
+end
+
+
+function constraint_dc_switch_power(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :dcswitch, i)
+    f_idx = (i, switch["f_busdc"], switch["t_busdc"])
+    
+    constraint_dc_switch_power(pm, nw, i, switch["f_busdc"], switch["t_busdc"])
+end
+
+function constraint_current_dc_switch_thermal_limits(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :dcswitch, i)
+    #f_idx = (i, switch["f_bus"], switch["t_bus"])
+    rate_sw = switch["rate_sw"]
+    
+    constraint_current_dc_switch_thermal_limits(pm, nw, i, switch["f_busdc"], switch["t_busdc"], rate_sw)
+end

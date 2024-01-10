@@ -41,6 +41,47 @@ function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i
     JuMP.@constraint(pm.model, z*vm_fr == z*vm_to)
 end
 
+function constraint_ac_switch_power(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus)
+    vm_fr = _PM.var(pm, n, :vm, f_bus)
+    #vm_to = _PM.var(pm, n, :vm, f_idx)
+
+    i_sw_r = _PM.var(pm, n, :i_sw_r, (i,f_bus,t_bus))
+    i_sw_i = _PM.var(pm, n, :i_sw_i, (i,f_bus,t_bus))
+
+    psw = _PM.var(pm, n, :psw, (i,f_bus,t_bus))
+    qsw = _PM.var(pm, n, :qsw, (i,f_bus,t_bus))
+
+    JuMP.@NLconstraint(pm.model, psw == vm_fr*i_sw_r)
+    JuMP.@NLconstraint(pm.model, qsw == vm_fr*i_sw_i)
+end
+
+function constraint_current_switch_thermal_limits(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus, rate_i_r, rate_i_i)
+    i_sw_r = _PM.var(pm, n, :i_sw_r, (i,f_bus,t_bus))
+    i_sw_i = _PM.var(pm, n, :i_sw_i, (i,f_bus,t_bus))
+
+    JuMP.@constraint(pm.model, - rate_i_r <= i_sw_r)
+    JuMP.@constraint(pm.model, i_sw_r <= rate_i_r)
+    JuMP.@constraint(pm.model, - rate_i_i <= i_sw_i)
+    JuMP.@constraint(pm.model, i_sw_i <= rate_i_i)
+end
+
+function constraint_dc_switch_power(pm::_PM.AbstractACPModel, n::Int, i, f_busdc, t_busdc)
+    vdcm = _PM.var(pm, n, :vdcm, f_busdc)
+    #vm_to = _PM.var(pm, n, :vm, f_idx)
+
+    i_sw_dc = _PM.var(pm, n, :i_sw_dc, (i,f_busdc,t_busdc))
+    p_dc_sw = _PM.var(pm, n, :p_dc_sw, (i,f_busdc,t_busdc))
+
+    JuMP.@NLconstraint(pm.model, p_dc_sw == vdcm*i_sw_dc)
+end
+
+function constraint_current_dc_switch_thermal_limits(pm::_PM.AbstractACPModel, n::Int, i, f_busdc, t_busdc, rate_i_dc)
+    i_sw_dc = _PM.var(pm, n, :i_sw_dc, (i,f_busdc,t_busdc))
+
+    JuMP.@constraint(pm.model, - rate_i_dc <= i_sw_dc)
+    JuMP.@constraint(pm.model, i_sw_dc <= rate_i_dc)
+end
+
 ## ACDC switch
 function constraint_power_balance_ac_switch(pm::_PM.AbstractACPModel, n::Int, i::Int, bus_arcs, bus_arcs_sw, bus_gens, bus_convs_ac, bus_loads, bus_shunts, pd, qd, gs, bs)
     vm = _PM.var(pm, n,  :vm, i)
@@ -61,3 +102,4 @@ function constraint_power_balance_ac_switch(pm::_PM.AbstractACPModel, n::Int, i:
         _PM.sol(pm, n, :bus, i)[:lam_kcl_i] = cstr_q
     end
 end
+

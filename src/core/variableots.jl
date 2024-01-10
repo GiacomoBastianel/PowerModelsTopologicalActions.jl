@@ -239,6 +239,64 @@ function variable_switch_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id
     report && _PM.sol_component_value(pm, nw, :switch, :status, _PM.ids(pm, nw, :switch), z_switch)
 end
 
+#Current through the switches to model the protections based on it
+function variable_switch_current_real(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)
+    #i_sw_r = _PM.var(pm, nw)[:i_sw_r] = JuMP.@variable(pm.model,
+    #    [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)], base_name="$(nw)_i_sw_r",
+    #    start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "psw_start")
+    #)
+
+    i_sw_r = JuMP.@variable(pm.model,
+    [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)], base_name="$(nw)_i_sw_r",
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "psw_start")
+    )
+
+    # this explicit type erasure is necessary
+    i_sw_r_expr = Dict{Any,Any}( (l,i,j) => i_sw_r[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw) )
+    i_sw_r_expr = merge(i_sw_r_expr, Dict( (l,j,i) => -1.0*i_sw_r[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)))
+    _PM.var(pm, nw)[:i_sw_r] = i_sw_r_expr
+
+    report && _PM.sol_component_value_edge(pm, nw, :switch, :i_sw_r_fr, :i_sw_r_to, _PM.ref(pm, nw, :arcs_from_sw), _PM.ref(pm, nw, :arcs_to_sw), i_sw_r_expr)
+end
+
+function variable_dc_switch_current(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)
+    i_sw_dc = JuMP.@variable(pm.model,
+    [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc)], base_name="$(nw)_i_sw_dc",
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "psw_start")
+    )
+
+    # this explicit type erasure is necessary
+    i_sw_dc_expr = Dict{Any,Any}( (l,i,j) => i_sw_dc[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc) )
+    i_sw_dc_expr = merge(i_sw_dc_expr, Dict( (l,j,i) => -1.0*i_sw_dc[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw_dc)))
+    _PM.var(pm, nw)[:i_sw_dc] = i_sw_dc_expr
+
+    report && _PM.sol_component_value_edge(pm, nw, :dcswitch, :i_sw_dc_fr, :i_sw_dc_to, _PM.ref(pm, nw, :arcs_from_sw_dc), _PM.ref(pm, nw, :arcs_to_sw_dc), i_sw_dc_expr)
+end
+
+function variable_switch_current_imaginary(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)
+    #i_sw_i = _PM.var(pm, nw)[:i_sw_i] = JuMP.@variable(pm.model,
+    #    [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)], base_name="$(nw)_i_sw_i",
+    #    start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "psw_start")
+    #)
+
+    i_sw_i = JuMP.@variable(pm.model,
+    [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)], base_name="$(nw)_i_sw_i",
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "psw_start")
+    )
+
+    # this explicit type erasure is necessary
+    i_sw_i_expr = Dict{Any,Any}( (l,i,j) => i_sw_i[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw) )
+    i_sw_i_expr = merge(i_sw_i_expr, Dict( (l,j,i) => -1.0*i_sw_i[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)))
+    _PM.var(pm, nw)[:i_sw_i] = i_sw_i_expr
+
+    report && _PM.sol_component_value_edge(pm, nw, :switch, :i_sw_i_fr, :i_sw_i_to, _PM.ref(pm, nw, :arcs_from_sw), _PM.ref(pm, nw, :arcs_to_sw), i_sw_i_expr)
+end
+
+function variable_switch_current(pm::_PM.AbstractPowerModel; kwargs...)
+    variable_switch_current_real(pm; kwargs...)
+    variable_switch_current_imaginary(pm; kwargs...)
+end
+
 ""
 function variable_switch_power(pm::_PM.AbstractPowerModel; kwargs...)
     variable_switch_power_real(pm; kwargs...)
@@ -360,7 +418,6 @@ function variable_active_dcbranch_flow(pm::_PM.AbstractPowerModel; nw::Int=_PM.n
 
     report && _IM.sol_component_value_edge(pm, _PM.pm_it_sym, nw, :branchdc, :pf, :pt, _PM.ref(pm, nw, :arcs_dcgrid_from), _PM.ref(pm, nw, :arcs_dcgrid_to), p)
 end
-
 
 
 "variable: `p_dc_sw[l,i,j]` for `(l,i,j)` in `arcs_dc_sw`"

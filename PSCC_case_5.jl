@@ -95,8 +95,8 @@ data_busbars_ac_split_5_acdc_no_OTS = deepcopy(data_5_acdc)
 splitted_bus_ac = 2
 
 
-data_5_acdc, extremes_ZIL = AC_busbar_split_more_buses_fixed(data_5_acdc,splitted_bus_ac)
-split_elements = elements_AC_busbar_split(data_5_acdc)
+#data_busbars_ac_split_5_acdc, extremes_ZIL = _PMTP.AC_busbar_split_more_buses_fixed(data_busbars_ac_split_5_acdc,splitted_bus_ac)
+#split_elements = _PMTP.elements_AC_busbar_split(data_5_acdc)
 
 data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
 
@@ -108,7 +108,7 @@ result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,S
 result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC(data_busbars_ac_split_5_acdc,QCRMPowerModel,gurobi)
 
 # Not necessary to reconnect all the branches
-#result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC_no_OTS(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper)
+result_AC_DC_5_switches_AC  = _PMTP.run_acdcsw_AC_no_OTS(data_busbars_ac_split_5_acdc,ACPPowerModel,juniper)
 
 
 #=
@@ -191,3 +191,88 @@ for (br_id, br) in result_AC_DC_5_switches_AC["solution"]["branchdc"]
     print("\n")
 end
 
+
+
+# Introducing the current parameter through the switches
+# AC BS for AC/DC grid with AC switches state as decision variable. Creating deepcopies of the original dictionary as the grid topology is modified with busbar splitting
+data_busbars_ac_split_5_acdc_current = deepcopy(data_5_acdc)
+
+# Selecting which busbars are split
+splitted_bus_ac = 2
+
+data_busbars_ac_split_5_acdc_current,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc_current,splitted_bus_ac)
+
+for (sw_id,sw) in data_busbars_ac_split_5_acdc_current["switch"]
+    sw["rate_sw"] = 1.0
+end
+
+result_ac = _PMTP.run_acdcsw_AC_current(data_busbars_ac_split_5_acdc_current,ACPPowerModel,juniper)
+
+for (sw_id,sw) in result_ac["solution"]["switch"]
+    print("Switch $(sw_id)","\n")
+    print("The status of the switch is $(sw["status"])","\n")
+    #print("The active power through the switch is $(sw["psw_fr"])","\n")
+    print("The real current through the switch is $(sw["i_sw_r_fr"])","\n")
+    #print("The reactive power through the switch is $(sw["qsw_fr"])","\n")
+    #print("The imaginary current through the switch is $(sw["i_sw_i_fr"])","\n")
+end
+
+
+# DC current through the dc switch
+data_busbars_dc_split_5_acdc_current = deepcopy(data_5_acdc)
+
+splitted_bus_dc = 2
+data_busbars_dc_split_5_acdc_current , dc_switches_couples_ac_dc_5, dc_extremes_ZILs_5_ac_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_dc_split_5_acdc_current,splitted_bus_dc)
+
+for (sw_id,sw) in data_busbars_dc_split_5_acdc_current["dcswitch"]
+    sw["rate_sw"] = 10.0
+end
+
+result_dc = _PMTP.run_acdcsw_DC_current(data_busbars_dc_split_5_acdc_current,ACPPowerModel,juniper)
+
+for (sw_id,sw) in result_dc["solution"]["dcswitch"]
+    print("Switch $(sw_id)","\n")
+    print("The status of the switch is $(sw["status"])","\n")
+    #print("The active power through the switch is $(sw["psw_fr"])","\n")
+    print("The real current through the switch is $(sw["i_sw_dc_fr"])","\n")
+    #print("The reactive power through the switch is $(sw["qsw_fr"])","\n")
+    #print("The imaginary current through the switch is $(sw["i_sw_i_fr"])","\n")
+end
+
+# AC and DC switches currents
+data_busbars_ac_split_5_acdc_current = deepcopy(data_5_acdc)
+splitted_bus_ac = 2
+splitted_bus_dc = 2
+
+data_busbars_ac_dc_split_5_acdc_current = deepcopy(data_5_acdc)
+
+data_busbars_ac_dc_split_5_acdc_current,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc_current,splitted_bus_ac)
+data_busbars_ac_dc_split_5_acdc_current , switches_couples_dc_5, extremes_ZILs_5_dc  = _PMTP.DC_busbar_split_more_buses(data_busbars_ac_dc_split_5_acdc_current,splitted_bus_dc)
+
+
+for (sw_id,sw) in data_busbars_ac_dc_split_5_acdc_current["switch"]
+    sw["rate_sw"] = 1.0
+end
+for (sw_id,sw) in data_busbars_ac_dc_split_5_acdc_current["dcswitch"]
+    sw["rate_sw"] = 10.0
+end
+
+result_ac_dc = _PMTP.run_acdcsw_AC_DC_current(data_busbars_ac_dc_split_5_acdc_current,ACPPowerModel,juniper)
+
+for (sw_id,sw) in result_ac_dc["solution"]["switch"]
+    print("Switch $(sw_id)","\n")
+    print("The status of the switch is $(sw["status"])","\n")
+    #print("The active power through the switch is $(sw["psw_fr"])","\n")
+    print("The real current through the switch is $(sw["i_sw_r_fr"])","\n")
+    #print("The reactive power through the switch is $(sw["qsw_fr"])","\n")
+    #print("The imaginary current through the switch is $(sw["i_sw_i_fr"])","\n")
+end
+
+for (sw_id,sw) in result_ac_dc["solution"]["dcswitch"]
+    print("Switch $(sw_id)","\n")
+    print("The status of the switch is $(sw["status"])","\n")
+    #print("The active power through the switch is $(sw["psw_fr"])","\n")
+    print("The real current through the switch is $(sw["i_sw_dc_fr"])","\n")
+    #print("The reactive power through the switch is $(sw["qsw_fr"])","\n")
+    #print("The imaginary current through the switch is $(sw["i_sw_i_fr"])","\n")
+end
