@@ -62,6 +62,45 @@ function variable_dc_branch_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw
 
     report && _PM.sol_component_value(pm, nw, :branchdc, :br_status, _PM.ids(pm, nw, :branchdc), z_ots_dc_var)
 end
+#=
+function variable_branch_indicator_linearised(pm::AbstractPowerModel; nw::Int=nw_id_default, relax::Bool=false, report::Bool=true)
+    if !relax
+        z_branch = _PM.var(pm, nw)[:z_branch] = JuMP.@variable(pm.model,
+            [l in _PM.ids(pm, nw, :branch)], base_name="$(nw)_z_branch",
+            binary = true,
+            start = _PM.comp_start_value(_PM.ref(pm, nw, :branch, l), "z_branch_start", 1.0)
+        )
+    else
+        z_branch = _PM.var(pm, nw)[:z_branch] = JuMP.@variable(pm.model,
+            [l in _PM.ids(pm, nw, :branch)], base_name="$(nw)_z_branch",
+            lower_bound = 0.0,
+            upper_bound = 1.0,
+            start = _PM.comp_start_value(_PM.ref(pm, nw, :branch, l), "z_branch_start", 1.0)
+        )
+    end
+
+    report && _PM.sol_component_value(pm, nw, :branch, :br_status, _PM.ids(pm, nw, :branch), z_branch)
+end
+=#
+
+function variable_branch_indicator_linearised(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
+    br = Dict()
+    for l in _PM.ids(pm, nw, :branch)
+        br[l] = _PM.ref(pm,nw,:branch,l)
+    end
+ 
+    z_branch = _PM.var(pm, nw)[:z_branch] = JuMP.@variable(pm.model,
+    [l in _PM.ids(pm, nw, :branch)], base_name="$(nw)_z_branch",
+    lower_bound = 0.0,
+    upper_bound = 1.0,
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :branch, l), "z_branch_start", br[l]["br_status_initial"])
+    )
+ 
+    report && _PM.sol_component_value(pm, nw, :branch, :br_status, _PM.ids(pm, nw, :branch), z_branch)
+end
+
+
+
 
 
 function variable_dc_conv_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)

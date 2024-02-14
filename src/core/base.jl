@@ -143,3 +143,28 @@ function add_ref_dcgrid_dcswitch!(ref::Dict{Symbol,<:Any}, data::Dict{String,<:A
         end
     end
 end
+
+
+"compute bus pair level structures"
+function buspair_parameters_dc(arcs_dcgrid_from, branches, buses)
+    buspair_indexes = collect(Set([(i, j) for (l, i, j) in arcs_dcgrid_from]))
+
+    bp_branch = Dict([(bp, Inf) for bp in buspair_indexes])
+
+    for (l, branch) in branches
+        i = branch["fbusdc"]
+        j = branch["tbusdc"]
+
+        bp_branch[(i, j)] = min(bp_branch[(i, j)], l)
+    end
+
+    buspairs = Dict([((i, j), Dict(
+        "branch" => bp_branch[(i, j)],
+        "vm_fr_min" => buses[i]["Vdcmin"],
+        "vm_fr_max" => buses[i]["Vdcmax"],
+        "vm_to_min" => buses[j]["Vdcmin"],
+        "vm_to_max" => buses[j]["Vdcmax"]
+    )) for (i, j) in buspair_indexes])
+
+    return buspairs
+end

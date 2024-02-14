@@ -74,6 +74,11 @@ function constraint_voltage_angle_difference_ots(pm::_PM.AbstractDCPModel, i::In
     #end
 end
 
+function constraint_linearised_binary_variable(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    csi_binaries = 10^(-3)
+    constraint_linearised_binary_variable(pm, nw, i, csi_binaries)
+end
+
 # These need to be updated
 
 function thermal_constraint_ots_fr(pm::_PM.AbstractACPModel, i::Int, nw::Int=_PM.nw_id_default)
@@ -156,7 +161,6 @@ function constraint_conv_filter_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::I
     constraint_conv_filter_dc_ots(pm, nw, i, conv["bf"], Bool(conv["filter"]) )
 end
 
-
 function constraint_conv_transformer_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     conv = _PM.ref(pm, nw, :convdc, i)
     constraint_conv_transformer_dc_ots(pm, nw, i, conv["rtf"], conv["xtf"], conv["busac_i"], conv["tm"], Bool(conv["transformer"]))
@@ -177,7 +181,6 @@ function constraint_branch_limit_on_off_dc_ots(pm::_PM.AbstractPowerModel, i::In
     constraint_branch_limit_on_off_dc_ots(pm, nw, i, f_idx, t_idx, pmax, pmin, imax, imin)
 end
 
-
 function constraint_converter_limit_on_off_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     bigM = 1.2
     conv = _PM.ref(pm, nw, :convdc, i)
@@ -191,7 +194,6 @@ function constraint_converter_limit_on_off_dc_ots(pm::_PM.AbstractPowerModel, i:
 
     constraint_converter_limit_on_off_dc_ots(pm, nw, i, pmax, pmin, qmax, qmin, pmaxdc, pmindc, imax)
 end
-
 
 function constraint_conv_reactor_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     conv = _PM.ref(pm, nw, :convdc, i)
@@ -372,7 +374,6 @@ function constraint_switch_difference_voltage_angles(pm::_PM.AbstractPowerModel,
     constraint_switch_difference_voltage_angles(pm, nw, switch, switch["maximum_angle"])
 end
 
-
 function constraint_ac_switch_power(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch = _PM.ref(pm, nw, :switch, i)
     f_idx = (i, switch["f_bus"], switch["t_bus"])
@@ -387,7 +388,6 @@ function constraint_current_switch_thermal_limits(pm::_PM.AbstractPowerModel, i:
     
     constraint_current_switch_thermal_limits(pm, nw, i, switch["f_bus"], switch["t_bus"], rate_sw, rate_sw)
 end
-
 
 function constraint_dc_switch_power(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch = _PM.ref(pm, nw, :dcswitch, i)

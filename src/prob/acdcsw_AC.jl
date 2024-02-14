@@ -14,7 +14,7 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
 
-    variable_switch_indicator(pm) # binary variable to indicate the status of an ac switch
+    variable_switch_indicator(pm, relax = true) # binary variable to indicate the status of an ac switch
     variable_switch_power(pm) # variable to indicate the power flowing through an ac switch (if closed)
 
     # DC grid
