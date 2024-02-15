@@ -65,6 +65,16 @@ function constraint_linearised_binary_variable(pm::_PM.AbstractPowerModel, n::In
     JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
 end
 
+function constraint_linearised_binary_variable_DC_branch(pm::_PM.AbstractPowerModel, n::Int, i, csi)
+    z = _PM.var(pm, n, :z_ots_dc, i)
+    JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+end
+
+function constraint_linearised_binary_variable_DC_conv(pm::_PM.AbstractPowerModel, n::Int, i, csi)
+    z = _PM.var(pm, n, :z_conv_dc, i)
+    JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+end
+
 ###################### Busbar Splitting Constraints ############################
 
 # From PowerModels.jl

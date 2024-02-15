@@ -75,8 +75,18 @@ function constraint_voltage_angle_difference_ots(pm::_PM.AbstractDCPModel, i::In
 end
 
 function constraint_linearised_binary_variable(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
-    csi_binaries = 10^(-3)
+    csi_binaries = 10^(-5)
     constraint_linearised_binary_variable(pm, nw, i, csi_binaries)
+end
+
+function constraint_linearised_binary_variable_DC_branch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    csi_binaries = 10^(-5)
+    constraint_linearised_binary_variable_DC_branch(pm, nw, i, csi_binaries)
+end
+
+function constraint_linearised_binary_variable_DC_conv(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    csi_binaries = 10^(-5)
+    constraint_linearised_binary_variable_DC_conv(pm, nw, i, csi_binaries)
 end
 
 # These need to be updated

@@ -1,7 +1,6 @@
 export run_acdcots_AC
 export run_acdcots_AC_lin
-export run_acdcots_AC_linearised
-#export run_acdcots_AC_NLP
+export run_acdcots_AC_lin_constrained
 
 ## AC formulation of the AC/DC OTS with only AC branches that can be switched ##
 ""
@@ -69,7 +68,7 @@ function build_acdcots_AC(pm::_PM.AbstractPowerModel)
     end
 end
 
-
+## AC formulation of the AC/DC OTS with only AC branches that can be switched, binary constraint for each branch linearised between 0 and 1 ##
 function run_acdcots_AC_lin(file::String, model_type::Type, solver; kwargs...)
     data = _PM.parse_file(file)
     _PMACDC.process_additional_data!(data)
@@ -135,21 +134,21 @@ function build_acdcots_AC_lin(pm::_PM.AbstractPowerModel)
 end
 
 
-## AC formulation of the AC/DC OTS with only AC branches that can be switched, SOC relaxation ##
+## AC formulation of the AC/DC OTS with only AC branches that can be switched, binary constraint for each branch linearised between 0 and 1 and constraint z(z-1) < err added ##
 ""
-function run_acdcots_AC_linearised(file::String, model_type::Type, solver; kwargs...)
+function run_acdcots_AC_lin_constrained(file::String, model_type::Type, solver; kwargs...)
     data = _PM.parse_file(file)
     _PMACDC.process_additional_data!(data)
-    return run_acdcots_AC_linearised(data, model_type, solver; ref_extensions = [_PMACDC.add_ref_dcgrid!], kwargs...)
+    return run_acdcots_AC_lin_constrained(data, model_type, solver; ref_extensions = [_PMACDC.add_ref_dcgrid!], kwargs...)
 end
 
 ""
-function run_acdcots_AC_linearised(data::Dict{String,Any}, model_type::Type, solver; kwargs...)
-    return _PM.solve_model(data, model_type, solver, build_acdcots_AC_linearised; ref_extensions=[_PMACDC.add_ref_dcgrid!,_PM.ref_add_on_off_va_bounds!], kwargs...)
+function run_acdcots_AC_lin_constrained(data::Dict{String,Any}, model_type::Type, solver; kwargs...)
+    return _PM.solve_model(data, model_type, solver, build_acdcots_AC_lin_constrained; ref_extensions=[_PMACDC.add_ref_dcgrid!,_PM.ref_add_on_off_va_bounds!], kwargs...)
 end
 
 ""
-function build_acdcots_AC_linearised(pm::_PM.AbstractPowerModel)
+function build_acdcots_AC_lin_constrained(pm::_PM.AbstractPowerModel)
     _PM.variable_bus_voltage_on_off(pm)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
@@ -160,6 +159,73 @@ function build_acdcots_AC_linearised(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
     variable_branch_indicator_linearised(pm)
+
+    _PM.objective_min_fuel_cost(pm)
+
+    _PM.constraint_model_voltage_on_off(pm)
+    _PMACDC.constraint_voltage_dc(pm)
+
+    for i in _PM.ids(pm, :ref_buses)
+        _PM.constraint_theta_ref(pm, i)
+    end
+
+    for i in _PM.ids(pm, :bus)
+        _PMACDC.constraint_power_balance_ac(pm, i)
+    end
+
+    for i in _PM.ids(pm, :branch)
+        _PM.constraint_ohms_yt_from_on_off(pm, i)
+        _PM.constraint_ohms_yt_to_on_off(pm, i)
+
+        _PM.constraint_voltage_angle_difference_on_off(pm,i)
+
+        _PM.constraint_thermal_limit_from_on_off(pm,i)
+        _PM.constraint_thermal_limit_to_on_off(pm,i)
+        constraint_linearised_binary_variable(pm,i)
+    end
+    for i in _PM.ids(pm, :busdc)
+        _PMACDC.constraint_power_balance_dc(pm, i)
+    end
+    for i in _PM.ids(pm, :branchdc)
+        _PMACDC.constraint_ohms_dc_branch(pm, i)
+    end
+    for i in _PM.ids(pm, :convdc)
+        _PMACDC.constraint_converter_losses(pm, i)
+        _PMACDC.constraint_converter_current(pm, i)
+        _PMACDC.constraint_conv_transformer(pm, i)
+        _PMACDC.constraint_conv_reactor(pm, i)
+        _PMACDC.constraint_conv_filter(pm, i)
+        if pm.ref[:it][:pm][:nw][_PM.nw_id_default][:convdc][i]["islcc"] == 1
+            _PMACDC.constraint_conv_firing_angle(pm, i)
+        end
+    end
+end
+
+## AC formulation of the AC/DC OTS with only AC branches that can be switched, binary constraint for each branch linearised between 0 and 1 and constraint z(z-1) < err added ##
+""
+function run_acdcots_AC_lin_constrained_sp(file::String, model_type::Type, solver; kwargs...)
+    data = _PM.parse_file(file)
+    _PMACDC.process_additional_data!(data)
+    return run_acdcots_AC_lin_constrained_sp(data, model_type, solver; ref_extensions = [_PMACDC.add_ref_dcgrid!], kwargs...)
+end
+
+""
+function run_acdcots_AC_lin_constrained_sp(data::Dict{String,Any}, model_type::Type, solver; kwargs...)
+    return _PM.solve_model(data, model_type, solver, build_acdcots_AC_lin_constrained_sp; ref_extensions=[_PMACDC.add_ref_dcgrid!,_PM.ref_add_on_off_va_bounds!], kwargs...)
+end
+
+""
+function build_acdcots_AC_lin_constrained_sp(pm::_PM.AbstractPowerModel)
+    _PM.variable_bus_voltage_on_off(pm)
+    _PM.variable_gen_power(pm)
+    _PM.variable_branch_power(pm)
+
+    _PMACDC.variable_active_dcbranch_flow(pm)
+    _PMACDC.variable_dcbranch_current(pm)
+    _PMACDC.variable_dc_converter(pm)
+    _PMACDC.variable_dcgrid_voltage_magnitude(pm)
+
+    variable_branch_indicator_linearised_sp(pm)
 
     _PM.objective_min_fuel_cost(pm)
 
