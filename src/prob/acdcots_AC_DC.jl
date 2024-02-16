@@ -98,6 +98,7 @@ function build_acdcots_AC_DC_lin(pm::_PM.AbstractPowerModel)
 
     variable_dc_branch_indicator(pm, relax = true)
     variable_dc_conv_indicator(pm, relax = true)
+    variable_voltage_slack_ots(pm)
 
 
     _PM.objective_min_fuel_cost(pm)
@@ -170,6 +171,7 @@ function build_acdcots_AC_DC_lin_constrained(pm::_PM.AbstractPowerModel)
     variable_branch_indicator_linearised(pm)
     variable_dc_branch_indicator_linearised(pm)
     variable_dc_conv_indicator_linearised(pm)
+    variable_voltage_slack_ots(pm)
 
     _PM.objective_min_fuel_cost(pm)
 
@@ -243,6 +245,7 @@ function build_acdcots_AC_DC_lin_constrained_sp(pm::_PM.AbstractPowerModel)
     variable_branch_indicator_linearised_sp(pm)
     variable_dc_branch_indicator_linearised_sp(pm)
     variable_dc_conv_indicator_linearised_sp(pm)
+    variable_voltage_slack_ots(pm)
 
     _PM.objective_min_fuel_cost(pm)
 

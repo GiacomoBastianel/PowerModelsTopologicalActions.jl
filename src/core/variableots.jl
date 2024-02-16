@@ -481,7 +481,6 @@ function variable_dc_switch_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw
     report && _PM.sol_component_value(pm, nw, :dcswitch, :status, _PM.ids(pm, nw, :dcswitch), z_dcswitch)
 end
 
-
 function variable_dc_switch_test(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=true)
     p_test = _PM.var(pm, nw)[:p_test] = JuMP.@variable(pm.model,
     [(l,i,j) in _PM.ref(pm, nw, :arcs_dcgrid)], base_name="$(nw)_pdcgrid",

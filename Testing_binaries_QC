@@ -53,13 +53,13 @@ end
 ## Optimal transmission switching models ##
 #######################################################################################
 # AC OPF for ACDC grid
-result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s_dual)
+result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,QCRMPowerModel,ipopt; setting = s_dual)
 
 # Solving AC OTS with OTS only on the AC grid part
-result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
 
 # assigning the branch status of the grid to 0 or 1 based on the previous simulation
 data_5_acdc_linearised = deepcopy(data_5_acdc)
@@ -71,16 +71,16 @@ for (b, branch) in result_AC_ots_5_lin["solution"]["branch"]
     end
 end
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,QCRMPowerModel,ipopt; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin_constrained(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin_constrained(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
 
 
 # Solving a two steps OTS:
 # 1) AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
 # 2) Using results from the previous simulation as starting point for the OTS with linearised variables and constraint z(z-1) < err added 
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
 
 # assigning the branch status of the grid to 0 or 1 based on the previous simulation
 data_5_acdc_linearised = deepcopy(data_5_acdc)
@@ -92,7 +92,7 @@ for (b, branch) in result_AC_ots_5_lin["solution"]["branch"]
     end
 end
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5_lin_const = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_const = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc_linearised,QCRMPowerModel,ipopt; setting = s)
 
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1 and constraint z(z-1) < err added 
@@ -103,7 +103,7 @@ for i in l
     for (b, branch) in data_5_acdc["branch"]
         branch["br_status_initial"] = deepcopy(i)
     end
-    result_AC_ots_starting_point_i = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+    result_AC_ots_starting_point_i = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
     
     # The dictionay here can be refined as one prefers
     results_starting_point["$i"] = Dict{String,Any}()
@@ -120,10 +120,10 @@ end
 ##########################################
 ##############################
 # Solving AC OTS with OTS only on the DC grid part
-result_AC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+result_AC_ots_5    = _PMTP.run_acdcots_DC(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
-result_AC_ots_5_lin = _PMTP.run_acdcots_DC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_DC_lin(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
 
 # assigning the branch status of the grid to 0 or 1 based on the previous simulation
 data_5_acdc_linearised = deepcopy(data_5_acdc)
@@ -146,13 +146,13 @@ end
 result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
-result_AC_ots_5_lin = _PMTP.run_acdcots_DC_lin_constrained(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_DC_lin_constrained(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
 
 
 # Solving a two steps OTS:
 # 1) AC OTS with OTS only on the DC grid part, binary constraint for each branch linearised between 0 and 1
 # 2) Using results from the previous simulation as starting point for the OTS with linearised variables and constraint z(z-1) < err added 
-result_AC_ots_5_lin = _PMTP.run_acdcots_DC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_DC_lin(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
 
 # assigning the branch status of the grid to 0 or 1 based on the previous simulation
 data_5_acdc_linearised = deepcopy(data_5_acdc)
@@ -171,7 +171,7 @@ for (c, conv) in result_AC_ots_5_lin["solution"]["convdc"]
     end
 end
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5_lin_const = _PMTP.run_acdcots_DC_lin_constrained_sp(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_const = _PMTP.run_acdcots_DC_lin_constrained_sp(data_5_acdc_linearised,QCRMPowerModel,ipopt; setting = s)
 
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1 and constraint z(z-1) < err added 
@@ -185,7 +185,7 @@ for i in l
     for (c, conv) in data_5_acdc["convdc"]
         conv["conv_status_initial"] = deepcopy(i)
     end
-    result_AC_ots_starting_point_i = _PMTP.run_acdcots_DC_lin_constrained_sp(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+    result_AC_ots_starting_point_i = _PMTP.run_acdcots_DC_lin_constrained_sp(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
     
     # The dictionay here can be refined as one prefers
     results_starting_point["$i"] = Dict{String,Any}()
@@ -203,10 +203,10 @@ end
 ##########################################
 ##############################
 # Solving AC OTS with both the AC and DC grid part
-result_AC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+result_AC_ots_5    = _PMTP.run_acdcots_AC_DC(data_5_acdc,QCRMPowerModel,juniper; setting = s)
 
 # Solving AC OTS with both the AC and DC grid part, binary constraint for each branch linearised between 0 and 1
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_DC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_AC_DC_lin(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
 
 # assigning the branch status of the grid to 0 or 1 based on the previous simulation
 data_5_acdc_linearised = deepcopy(data_5_acdc)
@@ -233,16 +233,16 @@ for (c, conv) in result_AC_ots_5_lin["solution"]["convdc"]
 end
 
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,QCRMPowerModel,ipopt; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_DC_lin_constrained(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_AC_DC_lin_constrained(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
 
 
 # Solving a two steps OTS:
 # 1) AC OTS with OTS only on the DC grid part, binary constraint for each branch linearised between 0 and 1
 # 2) Using results from the previous simulation as starting point for the OTS with linearised variables and constraint z(z-1) < err added 
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_DC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin = _PMTP.run_acdcots_AC_DC_lin(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
 
 # assigning the branch status of the grid to 0 or 1 based on the previous simulation
 data_5_acdc_linearised = deepcopy(data_5_acdc)
@@ -268,7 +268,7 @@ for (c, conv) in result_AC_ots_5_lin["solution"]["convdc"]
     end
 end
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5_lin_const = _PMTP.run_acdcots_AC_DC_lin_constrained_sp(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_const = _PMTP.run_acdcots_AC_DC_lin_constrained_sp(data_5_acdc_linearised,QCRMPowerModel,ipopt; setting = s)
 
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1 and constraint z(z-1) < err added 
@@ -285,7 +285,7 @@ for i in l
     for (c, conv) in data_5_acdc["convdc"]
         conv["conv_status_initial"] = deepcopy(i)
     end
-    result_AC_ots_starting_point_i = _PMTP.run_acdcots_AC_DC_lin_constrained_sp(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+    result_AC_ots_starting_point_i = _PMTP.run_acdcots_AC_DC_lin_constrained_sp(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
     
     # The dictionay here can be refined as one prefers
     results_starting_point["$i"] = Dict{String,Any}()
