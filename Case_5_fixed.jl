@@ -56,6 +56,7 @@ data_ac, extremes_ZIL = _PMTP.AC_busbar_split_more_buses_fixed(data_ac,splitted_
 split_elements = _PMTP.elements_AC_busbar_split(data_ac)
 
 result_ac = _PMTP.run_acdcsw_AC_fixed(data_ac,ACPPowerModel,juniper)
+
 # Now each element needs to be linked to either part of the busbar being split.
 # Test with the AC busbar split
 data_ac_fixed = deepcopy(data_ac)

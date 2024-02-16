@@ -76,6 +76,10 @@ function constraint_linearised_binary_variable_DC_conv(pm::_PM.AbstractPowerMode
 end
 
 ###################### Busbar Splitting Constraints ############################
+function constraint_linearised_binary_variable_switch(pm::_PM.AbstractPowerModel, n::Int, i, csi)
+z = _PM.var(pm, n, :z_switch, i)
+JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+end
 
 # From PowerModels.jl
 function constraint_switch_thermal_limit(pm::_PM.AbstractPowerModel, n::Int, f_idx, rating)

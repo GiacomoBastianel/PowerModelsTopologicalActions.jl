@@ -213,6 +213,12 @@ end
 
 
 # Busbar splitting
+function constraint_linearised_binary_variable_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    csi_binaries = 10^(-5)
+    constraint_linearised_binary_variable_switch(pm, nw, i, csi_binaries)
+end
+
+
 function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch_couple = _PM.ref(pm, nw, :switch_couples, i)
     #constraint_exclusivity_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"],switch_couple["switch_split"])

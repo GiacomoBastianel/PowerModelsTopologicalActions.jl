@@ -1,4 +1,7 @@
 export run_acdcots_AC_DC
+export run_acdcots_AC_DC_lin
+export run_acdcots_AC_DC_lin_constrained
+export run_acdcots_AC_DC_lin_constrained_sp
 
 
 ## AC formulation of the AC/DC OTS with both AC and DC branches that can be switched ##

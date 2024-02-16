@@ -19,8 +19,8 @@ juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt
 ## Input data ##
 #######################################################################################
 
-test_case_5_acdc = "case5_acdc.m"
-#test_case_5_acdc = "case39_acdc.m"
+#test_case_5_acdc = "case5_acdc.m"
+test_case_5_acdc = "case39_acdc.m"
 #test_case_5_acdc = "case67.m"
 #test_case_5_acdc = "case3120sp_mcdc.m"
 
@@ -58,6 +58,10 @@ result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,QCRMPowerModel,ipopt; setti
 # Solving AC OTS with OTS only on the AC grid part
 result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
 
+for (br_id,br) in result_AC_ots_5["solution"]["branch"]
+    print(br["br_status"],"\n")
+end
+
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
 result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
 
@@ -71,7 +75,11 @@ for (b, branch) in result_AC_ots_5_lin["solution"]["branch"]
     end
 end
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,QCRMPowerModel,ipopt; setting = s)
+result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+
+for (br_id,br) in data_5_acdc_linearised["branch"]
+    print(br["br_status"],"\n")
+end
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
 result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin_constrained(data_5_acdc,QCRMPowerModel,ipopt; setting = s)
@@ -143,7 +151,7 @@ for (c, conv) in result_AC_ots_5_lin["solution"]["convdc"]
 end
 
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,QCRMPowerModel,ipopt; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
 result_AC_ots_5_lin = _PMTP.run_acdcots_DC_lin_constrained(data_5_acdc,QCRMPowerModel,ipopt; setting = s)

@@ -327,12 +327,44 @@ function variable_switch_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id
     else
         z_switch = _PM.var(pm, nw)[:z_switch] = JuMP.@variable(pm.model,
             [i in _PM.ids(pm, nw, :switch)], base_name="$(nw)_z_switch",
-            lower_bound = 0,
-            upper_bound = 1,
+            lower_bound = 0.0,
+            upper_bound = 1.0,
             start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, i), "z_switch_start", 1.0)
         )
     end
 
+    report && _PM.sol_component_value(pm, nw, :switch, :status, _PM.ids(pm, nw, :switch), z_switch)
+end
+
+function variable_switch_indicator_linearised(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
+    br = Dict()
+    for l in _PM.ids(pm, nw, :switch)
+        br[l] = _PM.ref(pm,nw,:switch,l)
+    end
+ 
+    z_switch = _PM.var(pm, nw)[:z_switch] = JuMP.@variable(pm.model,
+    [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_z_switch",
+    lower_bound = 0.0,
+    upper_bound = 1.0,
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
+    )
+ 
+    report && _PM.sol_component_value(pm, nw, :switch, :status, _PM.ids(pm, nw, :switch), z_switch)
+end
+
+function variable_switch_indicator_linearised_sp(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
+    br = Dict()
+    for l in _PM.ids(pm, nw, :switch)
+        br[l] = _PM.ref(pm,nw,:switch,l)
+    end
+ 
+    z_switch = _PM.var(pm, nw)[:z_switch] = JuMP.@variable(pm.model,
+    [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_z_switch",
+    lower_bound = 0.0,
+    upper_bound = 1.0,
+    start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", br[l]["switch_status_initial"])
+    )
+ 
     report && _PM.sol_component_value(pm, nw, :switch, :status, _PM.ids(pm, nw, :switch), z_switch)
 end
 
