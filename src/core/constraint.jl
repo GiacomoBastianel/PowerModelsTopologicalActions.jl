@@ -89,6 +89,12 @@ function constraint_switch_thermal_limit(pm::_PM.AbstractPowerModel, n::Int, f_i
     JuMP.@constraint(pm.model, psw^2 + qsw^2 <= rating^2)
 end
 
+function constraint_switch_thermal_limit_dc(pm::_PM.AbstractPowerModel, n::Int, f_idx, rating)
+    psw = _PM.var(pm, n, :psw, f_idx)
+
+    JuMP.@constraint(pm.model, psw <= rating^2)
+end
+
 function constraint_dc_switch_thermal_limit(pm::_PM.AbstractPowerModel, n::Int, f_idx, rating)
     psw = _PM.var(pm, n, :p_dc_sw, f_idx)
 
@@ -104,6 +110,7 @@ end
 
 
 ""
+# TO be included in the DCPPowerModel formulation
 function constraint_dc_switch_power_on_off(pm::_PM.AbstractPowerModel, n::Int, i, f_idx)
     psw = _PM.var(pm, n, :p_dc_sw, f_idx)
     z = _PM.var(pm, n, :z_dcswitch, i)
@@ -128,6 +135,7 @@ function constraint_switch_power_on_off(pm::_PM.AbstractPowerModel, n::Int, i, f
     JuMP.@constraint(pm.model, qsw <= qsw_ub*z)
     JuMP.@constraint(pm.model, qsw >= qsw_lb*z)
 end
+
 
 
 

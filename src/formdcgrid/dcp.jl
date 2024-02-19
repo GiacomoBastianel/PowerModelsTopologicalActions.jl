@@ -50,21 +50,28 @@ end
 function constraint_converter_current_dc_ots(pm::_PM.AbstractDCPModel, n::Int, i::Int, Umax, Imax)
     # not used
 end
-
+=#
 ## ACDC switch
 function constraint_power_balance_ac_switch(pm::_PM.AbstractDCPModel, n::Int, i::Int, bus_arcs, bus_arcs_sw, bus_gens, bus_convs_ac, bus_loads, bus_shunts, pd, qd, gs, bs)
     p = _PM.var(pm, n,  :p)
     pg = _PM.var(pm, n,  :pg)
     pconv_grid_ac = _PM.var(pm, n,  :pconv_tf_fr)
-    #pconv_ac = _PM.var(pm, n, :pconv_ac) -> not used in PowerModelsACDC too
-    v = 1
     psw  = _PM.var(pm, n, :psw)
-    qsw  = _PM.var(pm, n, :qsw)
-    print(bus_arcs_sw)
-    cstr_p = JuMP.@constraint(pm.model, sum(p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(psw[sw] for sw in bus_arcs_sw) == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*vm^2)
+    v = 1
+
+    cstr_p = JuMP.@constraint(pm.model, sum(p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(psw[sw] for sw in bus_arcs_sw) == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*v^2)
 
     if _IM.report_duals(pm)
         _PM.sol(pm, n, :bus, i)[:lam_kcl_r] = cstr_p
     end
 end
-=#
+
+function constraint_switch_voltage_on_off(pm::_PM.AbstractDCPModel, n::Int, i, f_bus, t_bus)
+    #vm_fr = _PM.var(pm, n, :vm, f_bus)
+    #vm_to = _PM.var(pm, n, :vm, t_bus)
+    va_fr = _PM.var(pm, n, :va, f_bus)
+    va_to = _PM.var(pm, n, :va, t_bus)
+    z = _PM.var(pm, n, :z_switch, i)
+
+    JuMP.@constraint(pm.model, z*va_fr == z*va_to)
+end
