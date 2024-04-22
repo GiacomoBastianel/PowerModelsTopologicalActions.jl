@@ -21,6 +21,7 @@ juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt
 
 test_case_5_acdc = "case5_acdc.m"
 #test_case_5_acdc = "case39_acdc.m"
+#test_case_5_acdc = "DC_overlay_grid_6.0_GW_convdc.json"
 #test_case_5_acdc = "case67.m"
 #test_case_5_acdc = "case3120sp_mcdc.m"
 
@@ -39,12 +40,29 @@ data_original_5_acdc = _PM.parse_file(data_file_5_acdc)
 data_5_acdc = deepcopy(data_original_5_acdc)
 _PMACDC.process_additional_data!(data_5_acdc)
 
-# For case67
+
+# For case39
+#for (l_id,l) in data_5_acdc["load"]
+#    l["pd"] = l["pd"]/2 
+#    l["qd"] = l["qd"]/2 
+#end
+
+data_boom_boom_ac   = deepcopy(data_5_acdc)
+data_boom_boom_lpac = deepcopy(data_5_acdc)
+
+
 #=
+# For case67
 for (l_id,l) in data_5_acdc["load"]
     if l["index"] != 24
         l["pd"] = 0.0 
         l["qd"] = 0.0 
+    end
+end
+for (l_id,l) in data_5_acdc["gen"]
+    if l["name"][1:2] != "Co"
+        l["pmax"] = l["pmax"]/10 
+        l["qmax"] = l["qmax"]/10 
     end
 end
 =#
@@ -53,57 +71,117 @@ end
 ## Optimal transmission switching models ##
 #######################################################################################
 # AC OPF for ACDC grid
-result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s_dual)
+result_opf_5_ac      = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s_dual)
+result_opf_5_lpac    = _PMACDC.run_acdcopf(data_5_acdc,LPACCPowerModel,ipopt; setting = s_dual)
 
 # Solving AC OTS with OTS only on the AC grid part
-result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+result_AC_ots_5_ac      = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper; setting = s)
+result_AC_ots_5_lpac    = _PMTP.run_acdcots_AC(data_5_acdc,LPACCPowerModel,juniper; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_ac   = _PMTP.run_acdcots_AC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_lpac = _PMTP.run_acdcots_AC_lin(data_5_acdc,LPACCPowerModel,ipopt; setting = s)
 
 # assigning the branch status of the grid to 0 or 1 based on the previous simulation
-data_5_acdc_linearised = deepcopy(data_5_acdc)
-for (b, branch) in result_AC_ots_5_lin["solution"]["branch"]
+data_5_acdc_linearised_ac = deepcopy(data_5_acdc)
+for (b, branch) in result_AC_ots_5_lin_ac["solution"]["branch"]
     if branch["br_status"] < 0.5
-        data_5_acdc_linearised["branch"][b]["br_status"] = 0
+        data_5_acdc_linearised_ac["branch"][b]["br_status"] = 0
     else
-        data_5_acdc_linearised["branch"][b]["br_status"] = 1
+        data_5_acdc_linearised_ac["branch"][b]["br_status"] = 1
     end
 end
+data_5_acdc_linearised_lpac = deepcopy(data_5_acdc)
+for (b, branch) in result_AC_ots_5_lin_lpac["solution"]["branch"]
+    if branch["br_status"] < 0.5
+        data_5_acdc_linearised_lpac["branch"][b]["br_status"] = 0
+    else
+        data_5_acdc_linearised_lpac["branch"][b]["br_status"] = 1
+    end
+end
+
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_ac_lin    = _PMACDC.run_acdcopf(data_5_acdc_linearised_ac,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lpac_lin  = _PMACDC.run_acdcopf(data_5_acdc_linearised_lpac,ACPPowerModel,ipopt; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin_constrained(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_boom_boom_ac_lin   = _PMTP.run_acdcots_AC_lin_constrained(data_boom_boom_ac,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_boom_boom_lpac_lin = _PMTP.run_acdcots_AC_lin_constrained(data_boom_boom_lpac,LPACCPowerModel,ipopt; setting = s)
 
 
 # Solving a two steps OTS:
 # 1) AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
 # 2) Using results from the previous simulation as starting point for the OTS with linearised variables and constraint z(z-1) < err added 
-result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_ac   = _PMTP.run_acdcots_AC_lin(data_boom_boom_ac  ,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_lpac = _PMTP.run_acdcots_AC_lin(data_boom_boom_lpac,LPACCPowerModel,gurobi; setting = s)
+
+
+# assigning the branch status of the grid to 0 or 1 based on the previous simulation
+data_5_acdc_linearised_ac   = deepcopy(data_5_acdc)
+data_5_acdc_linearised_lpac = deepcopy(data_5_acdc)
+
+for (b, branch) in result_AC_ots_5_lin_ac["solution"]["branch"]
+    if branch["br_status"] < 0.5
+        data_5_acdc_linearised_ac["branch"][b]["br_status_initial"] = 0
+    else
+        data_5_acdc_linearised_ac["branch"][b]["br_status_initial"] = 1
+    end
+end
+for (b, branch) in result_AC_ots_5_lin_lpac["solution"]["branch"]
+    if branch["br_status"] < 0.5
+        data_5_acdc_linearised_lpac["branch"][b]["br_status_initial"] = 0
+    else
+        data_5_acdc_linearised_lpac["branch"][b]["br_status_initial"] = 1
+    end
+end
+
+# Running the OPF to check for feasibility/(local) optimality
+result_AC_ots_5_lin_const_ac   = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc_linearised_ac,ACPPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_const_lpac = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc_linearised_lpac,LPACCPowerModel,ipopt; setting = s)
+
+
+data_boom_boom_ac   = deepcopy(data_5_acdc)
+data_boom_boom_lpac = deepcopy(data_5_acdc)
+
 
 # assigning the branch status of the grid to 0 or 1 based on the previous simulation
 data_5_acdc_linearised = deepcopy(data_5_acdc)
-for (b, branch) in result_AC_ots_5_lin["solution"]["branch"]
-    if branch["br_status"] < 0.5
-        data_5_acdc_linearised["branch"][b]["br_status_initial"] = 0
-    else
-        data_5_acdc_linearised["branch"][b]["br_status_initial"] = 1
-    end
+for (b, branch) in data_5_acdc_linearised["branch"]
+    branch["br_status_initial"] = 0.0
 end
 # Running the OPF to check for feasibility/(local) optimality
 result_AC_ots_5_lin_const = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
 
 
+
+data_boom_boom_ac   = deepcopy(data_5_acdc)
+data_boom_boom_lpac = deepcopy(data_5_acdc)
+
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1 and constraint z(z-1) < err added 
 l = collect(0.0:0.1:1.0) #collecting list of starting point
 
 results_starting_point = Dict{String,Any}()
-for i in l
-    for (b, branch) in data_5_acdc["branch"]
+@time for i in l
+    data_boom_boom_ac   = deepcopy(data_5_acdc)
+    for (b, branch) in data_boom_boom_ac["branch"]
         branch["br_status_initial"] = deepcopy(i)
     end
-    result_AC_ots_starting_point_i = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+    result_AC_ots_starting_point_i = _PMTP.run_acdcots_AC_lin_constrained_sp(data_boom_boom_ac,ACPPowerModel,ipopt; setting = s)
+    
+    # The dictionay here can be refined as one prefers
+    results_starting_point["$i"] = Dict{String,Any}()
+    results_starting_point["$i"]["termination_status"] = result_AC_ots_starting_point_i["termination_status"]
+    results_starting_point["$i"]["primal_status"] = result_AC_ots_starting_point_i["primal_status"]
+    results_starting_point["$i"]["objective"] = result_AC_ots_starting_point_i["objective"]
+end
+
+results_starting_point = Dict{String,Any}()
+@time for i in l
+    data_boom_boom_lpac   = deepcopy(data_5_acdc)
+    for (b, branch) in data_boom_boom_lpac["branch"]
+        branch["br_status_initial"] = deepcopy(i)
+    end
+    result_AC_ots_starting_point_i = _PMTP.run_acdcots_AC_lin_constrained_sp(data_boom_boom_lpac,LPACCPowerModel,ipopt; setting = s)
     
     # The dictionay here can be refined as one prefers
     results_starting_point["$i"] = Dict{String,Any}()

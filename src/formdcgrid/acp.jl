@@ -26,6 +26,16 @@ function constraint_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i, f
     JuMP.@constraint(pm.model, z*va_fr == z*va_to)
 end
 
+function constraint_switch_voltage(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus)
+    vm_fr = _PM.var(pm, n, :vm, f_bus)
+    vm_to = _PM.var(pm, n, :vm, t_bus)
+    va_fr = _PM.var(pm, n, :va, f_bus)
+    va_to = _PM.var(pm, n, :va, t_bus)
+
+    JuMP.@constraint(pm.model, vm_fr == vm_to)
+    JuMP.@constraint(pm.model, va_fr == va_to)
+end
+
 function constraint_dc_switch_state_closed(pm::_PM.AbstractACPModel, n::Int, f_busdc, t_busdc)
     vm_fr = _PM.var(pm, n, :vdcm, f_busdc)
     vm_to = _PM.var(pm, n, :vdcm, t_busdc)
@@ -103,3 +113,94 @@ function constraint_power_balance_ac_switch(pm::_PM.AbstractACPModel, n::Int, i:
     end
 end
 
+###################### Bilinear terms reformulation ############################
+
+function constraint_aux_switches(pm::_PM.AbstractACPModel, n::Int, i_1)
+    aux_va = _PM.var(pm, n, :aux_switch_va, i_1)
+    aux_vm = _PM.var(pm, n, :aux_switch_vm, i_1)
+    aux_diff_va = _PM.var(pm, n, :delta_switch_va, i_1)
+    aux_diff_vm = _PM.var(pm, n, :delta_switch_vm, i_1)
+    z_ZIL = _PM.var(pm, n, :z_switch, i_1)
+
+    JuMP.@constraint(pm.model, aux_va == z_ZIL*aux_diff_va)
+    JuMP.@constraint(pm.model, aux_vm == z_ZIL*aux_diff_vm)
+end
+
+function constraint_aux_differences(pm::_PM.AbstractACPModel, n::Int, i_1, bus_1, bus_2)
+    aux_diff_va = _PM.var(pm, n, :delta_switch_va, i_1)
+    aux_diff_vm = _PM.var(pm, n, :delta_switch_vm, i_1)
+    va_1 = _PM.var(pm, n, :va, bus_1)
+    vm_1 = _PM.var(pm, n, :vm, bus_1)
+    va_2 = _PM.var(pm, n, :va, bus_2)
+    vm_2 = _PM.var(pm, n, :vm, bus_2)
+
+    JuMP.@constraint(pm.model, aux_diff_va == va_1 - va_2)
+    JuMP.@constraint(pm.model, aux_diff_vm == vm_1 - vm_2)
+end
+
+function constraint_1_aux_voltage_angles(pm::_PM.AbstractACPModel, n::Int, i_1, delta_min, delta_max)
+    aux_va = _PM.var(pm, n, :aux_switch_va, i_1)
+    z_ZIL = _PM.var(pm, n, :z_switch, i_1)
+    
+    JuMP.@constraint(pm.model, aux_va <= z_ZIL*delta_max)
+    JuMP.@constraint(pm.model, z_ZIL*delta_min <= aux_va)
+end
+
+function constraint_2_aux_voltage_angles(pm::_PM.AbstractACPModel, n::Int, i_1, delta_min, delta_max)
+    aux_va = _PM.var(pm, n, :aux_switch_va, i_1)
+    aux_diff_va = _PM.var(pm, n, :delta_switch_va, i_1)
+    z_ZIL = _PM.var(pm, n, :z_switch, i_1)
+    
+    JuMP.@constraint(pm.model, - delta_max*(1-z_ZIL) <= aux_va - aux_diff_va)
+    JuMP.@constraint(pm.model, aux_va - aux_diff_va <= - delta_min*(1-z_ZIL))
+end
+
+function constraint_1_aux_voltage_magnitudes(pm::_PM.AbstractACPModel, n::Int, i_1, delta_min, delta_max)
+    aux_vm = _PM.var(pm, n, :aux_switch_vm, i_1)
+    z_ZIL = _PM.var(pm, n, :z_switch, i_1)
+    
+    JuMP.@constraint(pm.model, aux_vm <= z_ZIL*delta_max)
+    JuMP.@constraint(pm.model, z_ZIL*delta_min <= aux_vm)
+end
+
+function constraint_2_aux_voltage_magnitudes(pm::_PM.AbstractACPModel, n::Int, i_1, delta_min, delta_max)
+    aux_vm = _PM.var(pm, n, :aux_switch_vm, i_1)
+    aux_diff_vm = _PM.var(pm, n, :delta_switch_vm, i_1)
+    z_ZIL = _PM.var(pm, n, :z_switch, i_1)
+    
+    JuMP.@constraint(pm.model, - delta_max*(1-z_ZIL) <= aux_vm - aux_diff_vm)
+    JuMP.@constraint(pm.model, aux_vm - aux_diff_vm <= - delta_min*(1-z_ZIL))
+end
+
+function constraint_aux_dcswitches(pm::_PM.AbstractACPModel, n::Int, i_1)
+    aux_vm = _PM.var(pm, n, :aux_dcswitch_vm, i_1)
+    aux_diff_vm = _PM.var(pm, n, :delta_dcswitch_vm, i_1)
+    z_ZIL = _PM.var(pm, n, :z_dcswitch, i_1)
+
+    JuMP.@constraint(pm.model, aux_vm == z_ZIL*aux_diff_vm)
+end
+
+function constraint_aux_dcdifferences(pm::_PM.AbstractACPModel, n::Int, i_1, bus_1, bus_2)
+    aux_diff_vm = _PM.var(pm, n, :delta_dcswitch_vm, i_1)
+    vm_1 = _PM.var(pm, n, :vdcm, bus_1)
+    vm_2 = _PM.var(pm, n, :vdcm, bus_2)
+
+    JuMP.@constraint(pm.model, aux_diff_vm == vm_1 - vm_2)
+end
+
+function constraint_1_aux_voltage_dc_magnitudes(pm::_PM.AbstractACPModel, n::Int, i_1, delta_min, delta_max)
+    aux_vm = _PM.var(pm, n, :aux_dcswitch_vm, i_1)
+    z_ZIL = _PM.var(pm, n, :z_dcswitch, i_1)
+    
+    JuMP.@constraint(pm.model, aux_vm <= z_ZIL*delta_max)
+    JuMP.@constraint(pm.model, z_ZIL*delta_min <= aux_vm)
+end
+
+function constraint_2_aux_voltage_dc_magnitudes(pm::_PM.AbstractACPModel, n::Int, i_1, delta_min, delta_max)
+    aux_vm = _PM.var(pm, n, :aux_dcswitch_vm, i_1)
+    aux_diff_vm = _PM.var(pm, n, :delta_dcswitch_vm, i_1)
+    z_ZIL = _PM.var(pm, n, :z_dcswitch, i_1)
+    
+    JuMP.@constraint(pm.model, - delta_max*(1-z_ZIL) <= aux_vm - aux_diff_vm)
+    JuMP.@constraint(pm.model, aux_vm - aux_diff_vm <= - delta_min*(1-z_ZIL))
+end

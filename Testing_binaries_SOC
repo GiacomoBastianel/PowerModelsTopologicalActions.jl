@@ -19,8 +19,8 @@ juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt
 ## Input data ##
 #######################################################################################
 
-test_case_5_acdc = "case5_acdc.m"
-#test_case_5_acdc = "case39_acdc.m"
+#test_case_5_acdc = "case5_acdc.m"
+test_case_5_acdc = "case39_acdc.m"
 #test_case_5_acdc = "case67.m"
 #test_case_5_acdc = "case3120sp_mcdc.m"
 
@@ -39,6 +39,13 @@ data_original_5_acdc = _PM.parse_file(data_file_5_acdc)
 data_5_acdc = deepcopy(data_original_5_acdc)
 _PMACDC.process_additional_data!(data_5_acdc)
 
+
+for (l_id,l) in data_5_acdc["load"]
+    l["pd"] = l["pd"]/2 
+    l["qd"] = l["qd"]/2 
+end
+
+data_boom_boom = deepcopy(data_5_acdc)
 # For case67
 #=
 for (l_id,l) in data_5_acdc["load"]
@@ -58,6 +65,21 @@ result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,ipopt; sett
 # Solving AC OTS with OTS only on the AC grid part
 result_AC_ots_5    = _PMTP.run_acdcots_AC(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
 
+data_5_acdc_linearised = deepcopy(data_5_acdc)
+for (b, branch) in result_AC_ots_5["solution"]["branch"]
+    if branch["br_status"] < 0.5
+        data_5_acdc_linearised["branch"][b]["status"] = 0
+    else
+        data_5_acdc_linearised["branch"][b]["status"] = 1
+    end
+end
+# Running the OPF to check for feasibility/(local) optimality
+result_opf    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+
+
+
+
+
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
 result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
 
@@ -71,10 +93,22 @@ for (b, branch) in result_AC_ots_5_lin["solution"]["branch"]
     end
 end
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,SOCWRPowerModel,ipopt; setting = s)
+result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1
 result_AC_ots_5_lin = _PMTP.run_acdcots_AC_lin_constrained(data_5_acdc,SOCWRPowerModel,ipopt; setting = s)
+
+data_5_acdc_linearised = deepcopy(data_5_acdc)
+for (b, branch) in result_AC_ots_5_lin["solution"]["branch"]
+    if branch["br_status"] < 0.5
+        data_5_acdc_linearised["branch"][b]["br_status"] = 0
+    else
+        data_5_acdc_linearised["branch"][b]["br_status"] = 1
+    end
+end
+# Running the OPF to check for feasibility/(local) optimality
+result_AC_ots_5    = _PMACDC.run_acdcopf(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
+
 
 
 # Solving a two steps OTS:
@@ -92,14 +126,15 @@ for (b, branch) in result_AC_ots_5_lin["solution"]["branch"]
     end
 end
 # Running the OPF to check for feasibility/(local) optimality
-result_AC_ots_5_lin_const = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc_linearised,SOCWRPowerModel,ipopt; setting = s)
+#result_AC_ots_5_lin_const = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc_linearised,SOCWRPowerModel,ipopt; setting = s)
+result_AC_ots_5_lin_const = _PMTP.run_acdcots_AC_lin_constrained_sp(data_5_acdc_linearised,ACPPowerModel,ipopt; setting = s)
 
 
 # Solving AC OTS with OTS only on the AC grid part, binary constraint for each branch linearised between 0 and 1 and constraint z(z-1) < err added 
 l = collect(0.0:0.1:1.0) #collecting list of starting point
 
 results_starting_point = Dict{String,Any}()
-for i in l
+@time for i in l
     for (b, branch) in data_5_acdc["branch"]
         branch["br_status_initial"] = deepcopy(i)
     end
@@ -110,11 +145,18 @@ for i in l
     results_starting_point["$i"]["termination_status"] = result_AC_ots_starting_point_i["termination_status"]
     results_starting_point["$i"]["primal_status"] = result_AC_ots_starting_point_i["primal_status"]
     results_starting_point["$i"]["objective"] = result_AC_ots_starting_point_i["objective"]
+    results_starting_point["$i"]["solution"] = result_AC_ots_starting_point_i["solution"]
 end
 
 for i in l
     print([i,results_starting_point["$i"]["termination_status"],results_starting_point["$i"]["objective"]],"\n")
 end
+data_5_soc_confirmation = deepcopy(data_5_acdc)
+for (br_id,br) in data_5_soc_confirmation["branch"]
+    br["status"] = deepcopy(results_starting_point["0.5"]["solution"]["branch"][br_id]["br_status"])
+end
+confirmation_AC_opf_5  = _PMACDC.run_acdcopf(data_5_soc_confirmation,ACPPowerModel,ipopt; setting = s)
+
 
 
 ##########################################

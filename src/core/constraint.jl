@@ -81,6 +81,14 @@ z = _PM.var(pm, n, :z_switch, i)
 JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
 end
 
+function constraint_linearised_binary_variable_switch_no_ZIL(pm::_PM.AbstractPowerModel, n::Int, i, csi)
+    sw = _PM.ref(pm, n, :switch, i)
+    if sw["ZIL"] == false
+        z = _PM.var(pm, n, :z_switch, i)
+        JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+    end
+end
+
 # From PowerModels.jl
 function constraint_switch_thermal_limit(pm::_PM.AbstractPowerModel, n::Int, f_idx, rating)
     psw = _PM.var(pm, n, :psw, f_idx)
@@ -121,7 +129,6 @@ function constraint_dc_switch_power_on_off(pm::_PM.AbstractPowerModel, n::Int, i
     JuMP.@constraint(pm.model, psw >= psw_lb*z)
 end
 
-
 function constraint_switch_power_on_off(pm::_PM.AbstractPowerModel, n::Int, i, f_idx)
     psw = _PM.var(pm, n, :psw, f_idx)
     qsw = _PM.var(pm, n, :qsw, f_idx)
@@ -136,8 +143,18 @@ function constraint_switch_power_on_off(pm::_PM.AbstractPowerModel, n::Int, i, f
     JuMP.@constraint(pm.model, qsw >= qsw_lb*z)
 end
 
+function constraint_switch_power(pm::_PM.AbstractPowerModel, n::Int, i, f_idx)
+    psw = _PM.var(pm, n, :psw, f_idx)
+    qsw = _PM.var(pm, n, :qsw, f_idx)
 
+    psw_lb, psw_ub = _IM.variable_domain(psw)
+    qsw_lb, qsw_ub = _IM.variable_domain(qsw)
 
+    JuMP.@constraint(pm.model, psw <= psw_ub)
+    JuMP.@constraint(pm.model, psw >= psw_lb)
+    JuMP.@constraint(pm.model, qsw <= qsw_ub)
+    JuMP.@constraint(pm.model, qsw >= qsw_lb)
+end
 
 function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, n::Int, i_1, i_2)
     z_1 = _PM.var(pm, n, :z_switch, i_1)
@@ -244,4 +261,4 @@ function constraint_switch_difference_voltage_angles(pm::_PM.AbstractPowerModel,
 end
 
 
-
+###################### Bilinear terms reformulation ############################

@@ -122,7 +122,6 @@ function thermal_constraint_ots_to(pm::_PM.AbstractACPModel, i::Int, nw::Int=_PM
     thermal_constraint_ots_to(pm, nw, i, f_bus, t_bus, f_idx, t_idx, g, b, g_to, b_to)
 end
 
-
 function constraint_ohms_ots_dc_branch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     branch = _PM.ref(pm,nw,:branchdc,i)
     f_bus = branch["fbusdc"]
@@ -210,14 +209,16 @@ function constraint_conv_reactor_dc_ots(pm::_PM.AbstractPowerModel, i::Int; nw::
     constraint_conv_reactor_dc_ots(pm, nw, i, conv["rc"], conv["xc"], Bool(conv["reactor"]))
 end
 
-
-
 # Busbar splitting
 function constraint_linearised_binary_variable_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     csi_binaries = 10^(-5)
     constraint_linearised_binary_variable_switch(pm, nw, i, csi_binaries)
 end
 
+function constraint_linearised_binary_variable_switch_no_ZIL(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    csi_binaries = 10^(-5)
+    constraint_linearised_binary_variable_switch_no_ZIL(pm, nw, i, csi_binaries)
+end
 
 function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch_couple = _PM.ref(pm, nw, :switch_couples, i)
@@ -226,37 +227,18 @@ function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, i::Int; nw::I
 end
 
 function constraint_BS_OTS_branch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
-    
     switch_couple = _PM.ref(pm, nw, :switch_couples, i)
-    #print("The switch_couple is "*"$switch_couple","\n")
-    #print("\n")
-    #print("\n")
     switch_ = _PM.ref(pm, nw, :switch)
-    #print("The switch_ is "*"$switch_","\n")
-    #print("\n")
-    #print("\n")
     branch_ = _PM.ref(pm, nw, :branch)
-    #print("The branch_ is "*"$branch_","\n")
-    #print("\n")
-    #print("\n")
     single_switch = switch_[switch_couple["f_sw"]]
-    #print("The single_switch is "*"$single_switch","\n")
-    #print("\n")
-    #print("\n")
-    #print(single_switch)
     branch_original = single_switch["original"]
-    #print("The branch_original is "*"$branch_original","\n")
-    #print("\n")
-    #print("\n")
     
-    #if single_switch["auxiliary"] == "branch"
-        constraint_BS_OTS_branch(pm, nw, switch_couple["f_sw"],switch_couple["t_sw"], 
-        (branch_[branch_original]["index"],branch_[branch_original]["f_bus"],branch_[branch_original]["t_bus"]),
-        (branch_[branch_original]["index"],branch_[branch_original]["t_bus"],branch_[branch_original]["f_bus"]),
-        (branch_[branch_original]["index"],branch_[branch_original]["f_bus"],branch_[branch_original]["t_bus"]),
-        (branch_[branch_original]["index"],branch_[branch_original]["t_bus"],branch_[branch_original]["f_bus"]),
-        single_switch,"auxiliary")
-    #end
+    constraint_BS_OTS_branch(pm, nw, switch_couple["f_sw"],switch_couple["t_sw"], 
+    (branch_[branch_original]["index"],branch_[branch_original]["f_bus"],branch_[branch_original]["t_bus"]),
+    (branch_[branch_original]["index"],branch_[branch_original]["t_bus"],branch_[branch_original]["f_bus"]),
+    (branch_[branch_original]["index"],branch_[branch_original]["f_bus"],branch_[branch_original]["t_bus"]),
+    (branch_[branch_original]["index"],branch_[branch_original]["t_bus"],branch_[branch_original]["f_bus"]),
+    single_switch,"auxiliary")
 end
 
 function constraint_BS_OTS_dcbranch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
@@ -303,6 +285,13 @@ function constraint_switch_power_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::
     constraint_switch_power_on_off(pm, nw, i, f_idx)
 end
 
+function constraint_switch_power(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :switch, i)
+    f_idx = (i, switch["f_bus"], switch["t_bus"])
+
+    constraint_switch_power(pm, nw, i, f_idx)
+end
+
 function constraint_dc_switch_power_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch = _PM.ref(pm, nw, :dcswitch, i)
     f_idx = (i, switch["f_busdc"], switch["t_busdc"])
@@ -316,6 +305,14 @@ function constraint_switch_voltage_on_off(pm::_PM.AbstractPowerModel, i::Int; nw
     #vad_max = _PM.ref(pm, nw, :off_angmax)
 
     constraint_switch_voltage_on_off(pm, nw, i, switch["f_bus"], switch["t_bus"])
+end
+
+function constraint_switch_voltage(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :switch, i)
+    #vad_min = _PM.ref(pm, nw, :off_angmin)
+    #vad_max = _PM.ref(pm, nw, :off_angmax)
+
+    constraint_switch_voltage(pm, nw, i, switch["f_bus"], switch["t_bus"])
 end
 
 function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
@@ -418,4 +415,87 @@ function constraint_current_dc_switch_thermal_limits(pm::_PM.AbstractPowerModel,
     rate_sw = switch["rate_sw"]
     
     constraint_current_dc_switch_thermal_limits(pm, nw, i, switch["f_busdc"], switch["t_busdc"], rate_sw)
+end
+
+###################### Bilinear terms reformulation ############################
+
+function constraint_aux_switches(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :switch, i)
+    bus_1 = switch_["f_bus"]
+    bus_2 = switch_["t_bus"]
+
+    constraint_aux_switches(pm, nw, switch_["index"])
+end
+
+function constraint_aux_differences(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :switch, i)
+    bus_1 = switch_["f_bus"]
+    bus_2 = switch_["t_bus"]
+
+    constraint_aux_differences(pm, nw, switch_["index"], bus_1, bus_2)
+end
+
+function constraint_aux_dcswitches(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :dcswitch, i)
+    bus_1 = switch_["f_busdc"]
+    bus_2 = switch_["t_busdc"]
+
+    constraint_aux_dcswitches(pm, nw, switch_["index"])
+end
+
+function constraint_aux_dcdifferences(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :dcswitch, i)
+    bus_1 = switch_["f_busdc"]
+    bus_2 = switch_["t_busdc"]
+
+    constraint_aux_dcdifferences(pm, nw, switch_["index"], bus_1, bus_2)
+end
+
+
+function constraint_1_aux_voltage_angles(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :switch, i)
+    bus_1 = switch_["f_bus"]
+    bus_2 = switch_["t_bus"]
+
+    constraint_1_aux_voltage_angles(pm, nw, switch_["index"], -2*pi, 2*pi)
+end
+
+function constraint_2_aux_voltage_angles(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :switch, i)
+    bus_1 = switch_["f_bus"]
+    bus_2 = switch_["t_bus"]
+
+    constraint_2_aux_voltage_angles(pm, nw, switch_["index"], -2*pi, 2*pi)
+end
+
+function constraint_1_aux_voltage_magnitudes(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :switch, i)
+    bus_1 = switch_["f_bus"]
+    bus_2 = switch_["t_bus"]
+
+    constraint_1_aux_voltage_magnitudes(pm, nw, switch_["index"], -10.0, 10.0)
+end
+
+function constraint_2_aux_voltage_magnitudes(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :switch, i)
+    bus_1 = switch_["f_bus"]
+    bus_2 = switch_["t_bus"]
+
+    constraint_2_aux_voltage_magnitudes(pm, nw, switch_["index"], -10.0, 10.0)
+end
+
+function constraint_1_aux_voltage_dc_magnitudes(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :dcswitch, i)
+    bus_1 = switch_["f_busdc"]
+    bus_2 = switch_["t_busdc"]
+
+    constraint_1_aux_voltage_dc_magnitudes(pm, nw, switch_["index"], -10.0, 10.0)
+end
+
+function constraint_2_aux_voltage_dc_magnitudes(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_ = _PM.ref(pm, nw, :dcswitch, i)
+    bus_1 = switch_["f_busdc"]
+    bus_2 = switch_["t_busdc"]
+
+    constraint_2_aux_voltage_dc_magnitudes(pm, nw, switch_["index"], -10.0, 10.0)
 end

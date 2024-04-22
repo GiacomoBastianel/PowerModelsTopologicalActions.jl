@@ -136,10 +136,6 @@ function build_acdcsw_DC_no_OTS(pm::_PM.AbstractPowerModel)
         _PM.constraint_thermal_limit_to(pm, i)
     end
 
-    for i in _PM.ids(pm, :dcline)
-        _PM.constraint_dcline_power_losses(pm, i)
-    end
-
     for i in _PM.ids(pm, :busdc)
         constraint_power_balance_dc_switch(pm, i) # taking into account dc switches in the power balance of the dc part of an AC/DC grid
     end

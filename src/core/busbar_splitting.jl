@@ -667,6 +667,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
                     data["switch"]["$added_switch"]["auxiliary"] = deepcopy(b["auxiliary"]) 
                     data["switch"]["$added_switch"]["original"] = deepcopy(b["original"]) 
                     data["switch"]["$added_switch"]["bus_split"] = deepcopy(extremes_ZIL[i][1])
+                    data["switch"]["$added_switch"]["ZIL"] = false
                 end
                 # Connecting to the second part of the substation being split
                 if b["bus_split"] == extremes_ZIL[i][1] 
@@ -680,6 +681,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
                     data["switch"]["$added_switch"]["auxiliary"] = deepcopy(b["auxiliary"]) 
                     data["switch"]["$added_switch"]["original"] = deepcopy(b["original"])  
                     data["switch"]["$added_switch"]["bus_split"] = deepcopy(extremes_ZIL[i][1])
+                    data["switch"]["$added_switch"]["ZIL"] = false
                 end
             end
         end
@@ -894,6 +896,7 @@ function DC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
                     data["dcswitch"]["$added_switch"]["auxiliary"] = deepcopy(b["auxiliary"]) 
                     data["dcswitch"]["$added_switch"]["original"] = deepcopy(b["original"]) 
                     data["dcswitch"]["$added_switch"]["busdc_split"] = deepcopy(extremes_ZIL_dc[i][1])
+                    data["dcswitch"]["$added_switch"]["ZIL"] = false
                 end
                 if b["busdc_split"] == extremes_ZIL_dc[i][1] 
                     number_switches = length(data["dcswitch"])
@@ -906,6 +909,7 @@ function DC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
                     data["dcswitch"]["$added_switch"]["original"] = deepcopy(b["original"])  
                     data["dcswitch"]["$added_switch"]["source_id"][2] = deepcopy(added_switch)
                     data["dcswitch"]["$added_switch"]["busdc_split"] = deepcopy(extremes_ZIL_dc[i][1])
+                    data["dcswitch"]["$added_switch"]["ZIL"] = false  
                 end
             end
         end
