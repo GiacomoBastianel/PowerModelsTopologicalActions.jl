@@ -20,13 +20,12 @@ juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt
 #######################################################################################
 
 test_case_5_acdc = "case5_acdc.m"
-#test_case_5_acdc = "case39_acdc.m"
-#test_case_5_acdc = "DC_overlay_grid_6.0_GW_convdc.json"
-#test_case_5_acdc = "case67.m"
-#test_case_5_acdc = "case3120sp_mcdc.m"
-
-test_case_ac_only = "case24.m"
-
+#=
+test_case_5_acdc = "case67.m"
+test_case_5_acdc = "case39_acdc.m"
+test_case_5_acdc = "case3120sp_mcdc.m"
+test_case_5_acdc = "cigre_b4_dc_grid.m"
+=#
 #######################################################################################
 ## Parsing input data ##
 #######################################################################################
@@ -40,32 +39,6 @@ data_original_5_acdc = _PM.parse_file(data_file_5_acdc)
 data_5_acdc = deepcopy(data_original_5_acdc)
 _PMACDC.process_additional_data!(data_5_acdc)
 
-
-# For case39
-#for (l_id,l) in data_5_acdc["load"]
-#    l["pd"] = l["pd"]/2 
-#    l["qd"] = l["qd"]/2 
-#end
-
-data_boom_boom_ac   = deepcopy(data_5_acdc)
-data_boom_boom_lpac = deepcopy(data_5_acdc)
-
-
-#=
-# For case67
-for (l_id,l) in data_5_acdc["load"]
-    if l["index"] != 24
-        l["pd"] = 0.0 
-        l["qd"] = 0.0 
-    end
-end
-for (l_id,l) in data_5_acdc["gen"]
-    if l["name"][1:2] != "Co"
-        l["pmax"] = l["pmax"]/10 
-        l["qmax"] = l["qmax"]/10 
-    end
-end
-=#
 
 #######################################################################################
 ## Optimal transmission switching models ##

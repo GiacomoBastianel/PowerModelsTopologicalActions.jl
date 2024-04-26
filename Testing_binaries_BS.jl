@@ -19,8 +19,8 @@ juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt
 ## Input data ##
 #######################################################################################
 
-#test_case_5_acdc = "case5_acdc.m"
-test_case_5_acdc = "case39_acdc.m"
+test_case_5_acdc = "case5_acdc.m"
+#test_case_5_acdc = "case39_acdc.m"
 #test_case_5_acdc = "case67.m"
 #test_case_5_acdc = "case3120sp_mcdc.m"
 
@@ -40,10 +40,10 @@ data_5_acdc = deepcopy(data_original_5_acdc)
 _PMACDC.process_additional_data!(data_5_acdc)
 
 # For case 39
-for (l_id,l) in data_5_acdc["load"]
-    l["pd"] = l["pd"]/2 
-    l["qd"] = l["qd"]/2 
-end
+#for (l_id,l) in data_5_acdc["load"]
+#    l["pd"] = l["pd"]/2 
+#    l["qd"] = l["qd"]/2 
+#end
 
 data_boom_boom = deepcopy(data_5_acdc)
 
@@ -53,9 +53,9 @@ data_boom_boom = deepcopy(data_5_acdc)
 # AC OPF for ACDC grid
 result_opf_5_ac    = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s_dual)
 
-for (b_id,b) in result_opf_5_ac["solution"]["bus"]
-    print([b_id,"lam_kcl_i $(b["lam_kcl_i"])", "lam_kcl_r $(b["lam_kcl_r"])"],"\n")
-end
+#for (b_id,b) in result_opf_5_ac["solution"]["bus"]
+#    print([b_id,"lam_kcl_i $(b["lam_kcl_i"])", "lam_kcl_r $(b["lam_kcl_r"])"],"\n")
+#end
 
 
 # AC BS for AC/DC grid with AC switches state as decision variable. Creating deepcopies of the original dictionary as the grid topology is modified with busbar splitting
@@ -64,8 +64,8 @@ data_busbars_ac_split_5_acdc_no_OTS = deepcopy(data_5_acdc)
 data_busbars_ac_split_5_acdc_lin = deepcopy(data_5_acdc)
 
 # Selecting which busbars are split
-#splitted_bus_ac = [2,5] # -> 0.9 the best (better than MINLP)
-splitted_bus_ac = [35,38] # -> 0.8 the best (better than MINLP)
+splitted_bus_ac = [2,4] # -> 0.9 the best (better than MINLP)
+#splitted_bus_ac = [35,38] # -> 0.8 the best (better than MINLP)
 #splitted_bus_ac = [4,5] # -> 1.0 the best (better than MINLP)
 
 #data_busbars_ac_split_5_acdc, extremes_ZIL = _PMTP.AC_busbar_split_more_buses_fixed(data_busbars_ac_split_5_acdc,splitted_bus_ac)

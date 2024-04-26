@@ -288,8 +288,8 @@ function constraint_conv_firing_angle(pm::_PM.AbstractLPACCModel, n::Int, i::Int
     q = _PM.var(pm, n, :qconv_ac, i)
     phi = _PM.var(pm, n, :phiconv, i)
 
-    JuMP.@NLconstraint(pm.model, p == cos(phi) * S)
-    JuMP.@NLconstraint(pm.model, q == sin(phi) * S)
+    JuMP.@constraint(pm.model, p == cos(phi) * S)
+    JuMP.@constraint(pm.model, q == sin(phi) * S)
 end
 
 function constraint_converter_current_ots(pm::_PM.AbstractLPACCModel, n::Int, i::Int, Umax, Imax)
@@ -299,7 +299,8 @@ function constraint_converter_current_ots(pm::_PM.AbstractLPACCModel, n::Int, i:
     iconv = _PM.var(pm, n, :iconv_ac, i)
     z_dc = _PM.var(pm, n, :z_conv_dc, i)
 
-    JuMP.@NLconstraint(pm.model, pconv_ac^2 + qconv_ac^2 == z_dc * phi_vmc^2 * iconv^2)
+    #JuMP.@NLconstraint(pm.model, pconv_ac^2 + qconv_ac^2 == z_dc * phi_vmc^2 * iconv^2)
+    JuMP.@constraint(pm.model, iconv <= Imax)
 end
 
 function constraint_converter_losses_dc_ots(pm::_PM.AbstractLPACCModel, n::Int, i::Int, a, b, c, plmax)
@@ -308,7 +309,7 @@ function constraint_converter_losses_dc_ots(pm::_PM.AbstractLPACCModel, n::Int, 
     iconv = _PM.var(pm, n, :iconv_ac, i)
     z_DC = _PM.var(pm, n, :z_conv_dc, i)
 
-    JuMP.@NLconstraint(pm.model, pconv_ac + pconv_dc == z_DC*(a + b*iconv + c*iconv^2))
+    JuMP.@constraint(pm.model, pconv_ac + pconv_dc == z_DC*(a + b*iconv))
 end
 
 
