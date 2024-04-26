@@ -16,7 +16,7 @@ While the OTS is a well-established problem in the literature, the BS is still n
 * AC (polar coordinates)
 * SOC Relaxation (W-space) 
 * QC Relaxation (W+L-space)
-* LPAC Relaxation (Cold Start)
+* LPAC Approximation (Cold Start)
 
 
 # Acknowledgements
