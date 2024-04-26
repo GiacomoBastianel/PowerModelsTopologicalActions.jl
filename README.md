@@ -14,8 +14,9 @@ While the OTS is a well-established problem in the literature, the BS is still n
 
 **Core network formulations**
 * AC (polar coordinates)
-* SOC Relaxation (W-space) (test phase)
-* QC Relaxation (W+L-space) (test phase)
+* SOC Relaxation (W-space) 
+* QC Relaxation (W+L-space)
+* LPAC Relaxation (Cold Start)
 
 
 # Acknowledgements
@@ -26,10 +27,6 @@ Marta Vanin (@MartaVanin)
 
 
 # Citing PowerModelsTopologicalActions.jl
-
-If you find PowerModelsTopologicalActions useful in your work, we kindly request that you cite the following publication:
-
-'AC/DC Grids Steady-State Operations with Optimal Transmission Switching and Busbar Splitting', submitted for PSCC 2024.
 
 
 
