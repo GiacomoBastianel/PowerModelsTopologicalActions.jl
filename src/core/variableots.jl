@@ -446,6 +446,11 @@ function variable_switch_power(pm::_PM.AbstractPowerModel; kwargs...)
     variable_switch_power_imaginary(pm; kwargs...)
 end
 
+function variable_switch_power_sp(pm::_PM.AbstractPowerModel; kwargs...)
+    variable_switch_power_real_sp(pm; kwargs...)
+    variable_switch_power_imaginary_sp(pm; kwargs...)
+end
+
 
 "variable: `pws[l,i,j]` for `(l,i,j)` in `arcs_sw`"
 function variable_switch_power_real(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
@@ -506,6 +511,64 @@ function variable_switch_power_imaginary(pm::_PM.AbstractPowerModel; nw::Int=_PM
     report && _PM.sol_component_value_edge(pm, nw, :switch, :qsw_fr, :qsw_to, _PM.ref(pm, nw, :arcs_from_sw), _PM.ref(pm, nw, :arcs_to_sw), qsw_expr)
 end
 
+"variable: `pws[l,i,j]` for `(l,i,j)` in `arcs_sw`"
+function variable_switch_power_real_sp(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
+    psw = JuMP.@variable(pm.model,
+        [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)], base_name="$(nw)_psw",
+        start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "psw_start", sp_switch)
+    )
+
+    if bounded
+        flow_lb, flow_ub = _PM.ref_calc_switch_flow_bounds(_PM.ref(pm, nw, :switch), _PM.ref(pm, nw, :bus))
+
+        for arc in _PM.ref(pm, nw, :arcs_from_sw)
+            l,i,j = arc
+            if !isinf(flow_lb[l])
+                JuMP.set_lower_bound(psw[arc], flow_lb[l])
+            end
+            if !isinf(flow_ub[l])
+                JuMP.set_upper_bound(psw[arc], flow_ub[l])
+            end
+        end
+    end
+
+    # this explicit type erasure is necessary
+    psw_expr = Dict{Any,Any}( (l,i,j) => psw[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw) )
+    psw_expr = merge(psw_expr, Dict( (l,j,i) => -1.0*psw[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)))
+    _PM.var(pm, nw)[:psw] = psw_expr
+
+    report && _PM.sol_component_value_edge(pm, nw, :switch, :psw_fr, :psw_to, _PM.ref(pm, nw, :arcs_from_sw), _PM.ref(pm, nw, :arcs_to_sw), psw_expr)
+end
+
+
+"variable: `pws[l,i,j]` for `(l,i,j)` in `arcs_sw`"
+function variable_switch_power_imaginary_sp(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
+    qsw = JuMP.@variable(pm.model,
+        [(l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)], base_name="$(nw)_qsw",
+        start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "qsw_start", sp_switch)
+    )
+
+    if bounded
+        flow_lb, flow_ub = _PM.ref_calc_switch_flow_bounds(_PM.ref(pm, nw, :switch), _PM.ref(pm, nw, :bus))
+
+        for arc in _PM.ref(pm, nw, :arcs_from_sw)
+            l,i,j = arc
+            if !isinf(flow_lb[l])
+                JuMP.set_lower_bound(qsw[arc], flow_lb[l])
+            end
+            if !isinf(flow_ub[l])
+                JuMP.set_upper_bound(qsw[arc], flow_ub[l])
+            end
+        end
+    end
+
+    # this explicit type erasure is necessary
+    qsw_expr = Dict{Any,Any}( (l,i,j) => qsw[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw) )
+    qsw_expr = merge(qsw_expr, Dict( (l,j,i) => -1.0*qsw[(l,i,j)] for (l,i,j) in _PM.ref(pm, nw, :arcs_from_sw)))
+    _PM.var(pm, nw)[:qsw] = qsw_expr
+
+    report && _PM.sol_component_value_edge(pm, nw, :switch, :qsw_fr, :qsw_to, _PM.ref(pm, nw, :arcs_from_sw), _PM.ref(pm, nw, :arcs_to_sw), qsw_expr)
+end
 
 # DC grid
 function variable_dc_switch_indicator(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, relax::Bool=false, report::Bool=true)
@@ -595,8 +658,8 @@ end
 function auxiliary_variable_switch_voltage_angle(pm::_PM.AbstractACPModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     aux_switch_va = _PM.var(pm, nw)[:aux_switch_va] = JuMP.@variable(pm.model,
     [i in _PM.ids(pm, nw, :switch)], base_name="$(nw)aux_switch_va",
-    lower_bound = -10.0,
-    upper_bound = 10.0,
+    lower_bound = -2.0,
+    upper_bound = 2.0,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, i), "z_switch_start", 1.0)
     )
 
@@ -607,8 +670,8 @@ end
 function auxiliary_variable_switch_voltage_angle(pm::_PM.AbstractLPACCModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     aux_switch_va = _PM.var(pm, nw)[:aux_switch_va] = JuMP.@variable(pm.model,
     [i in _PM.ids(pm, nw, :switch)], base_name="$(nw)aux_switch_va",
-    lower_bound = -10.0,
-    upper_bound = 10.0,
+    lower_bound = -2.0,
+    upper_bound = 2.0,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, i), "z_switch_start", 1.0)
     )
 
@@ -622,8 +685,8 @@ end
 function auxiliary_variable_switch_voltage_magnitude(pm::_PM.AbstractACPModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     aux_switch_vm = _PM.var(pm, nw)[:aux_switch_vm] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_aux_switch_vm",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.3,
+    upper_bound = 0.3,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
     )
 
@@ -633,8 +696,8 @@ end
 function auxiliary_variable_switch_voltage_magnitude(pm::_PM.AbstractLPACCModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     aux_switch_phi = _PM.var(pm, nw)[:aux_switch_phi] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_aux_switch_phi",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = - 0.3,
+    upper_bound = 0.3,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
     )
 
@@ -644,8 +707,8 @@ end
 function auxiliary_variable_switch_voltage_magnitude(pm::_PM.AbstractWRModels; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     aux_switch_w = _PM.var(pm, nw)[:aux_switch_w] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_aux_switch_w",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = - 0.3,
+    upper_bound = 0.3,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
     )
 
@@ -655,8 +718,8 @@ end
 function auxiliary_diff_switch_voltage_angle(pm::_PM.AbstractACPModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     delta_switch_va = _PM.var(pm, nw)[:delta_switch_va] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_delta_switch_va",
-    lower_bound = - 10.0,
-    upper_bound = 10.0,
+    lower_bound = - 1.05,
+    upper_bound = 1.05,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
     )
 
@@ -666,8 +729,8 @@ end
 function auxiliary_diff_switch_voltage_angle(pm::_PM.AbstractLPACCModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     delta_switch_va = _PM.var(pm, nw)[:delta_switch_va] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_delta_switch_va",
-    lower_bound = - 10.0,
-    upper_bound = 10.0,
+    lower_bound = - 1.05,
+    upper_bound = 1.05,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
     )
 
@@ -680,8 +743,8 @@ end
 function auxiliary_diff_switch_voltage_magnitude(pm::_PM.AbstractACPModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     delta_switch_vm = _PM.var(pm, nw)[:delta_switch_vm] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)aux_switch_vm",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
     )
     print(delta_switch_vm)
@@ -692,8 +755,8 @@ end
 function auxiliary_diff_switch_voltage_magnitude(pm::_PM.AbstractLPACCModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     delta_switch_phi = _PM.var(pm, nw)[:delta_switch_phi] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_aux_switch_phi",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
     )
 
@@ -703,8 +766,8 @@ end
 function auxiliary_diff_switch_voltage_magnitude(pm::_PM.AbstractWRModels; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     delta_switch_w = _PM.var(pm, nw)[:delta_switch_w] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :switch)], base_name="$(nw)_aux_switch_w",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :switch, l), "z_switch_start", 1.0)
     )
 
@@ -714,8 +777,8 @@ end
 function auxiliary_variable_DC_switch_voltage_magnitude(pm::_PM.AbstractACPModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     aux_dcswitch_vm = _PM.var(pm, nw)[:aux_dcswitch_vm] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :dcswitch)], base_name="$(nw)_aux_dcswitch_vm",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "z_switch_start", 1.0)
     )
 
@@ -725,8 +788,8 @@ end
 function auxiliary_variable_DC_switch_voltage_magnitude(pm::_PM.AbstractLPACCModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     aux_dcswitch_phi = _PM.var(pm, nw)[:aux_dcswitch_phi] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :dcswitch)], base_name="$(nw)_aux_dcswitch_phi",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "z_switch_start", 1.0)
     )
 
@@ -736,8 +799,8 @@ end
 function auxiliary_variable_DC_switch_voltage_magnitude(pm::_PM.AbstractWRModels; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     aux_dcswitch_w = _PM.var(pm, nw)[:aux_dcswitch_w] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :dcswitch)], base_name="$(nw)_aux_dcswitch_w",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "z_switch_start", 1.0)
     )
 
@@ -747,8 +810,8 @@ end
 function auxiliary_diff_DC_switch_voltage_magnitude(pm::_PM.AbstractACPModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     delta_dcswitch_vm = _PM.var(pm, nw)[:delta_dcswitch_vm] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :dcswitch)], base_name="$(nw)_diff_dcswitch_vm",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "z_switch_start", 1.0)
     )
 
@@ -758,8 +821,8 @@ end
 function auxiliary_diff_DC_switch_voltage_magnitude(pm::_PM.AbstractLPACCModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     delta_dcswitch_phi = _PM.var(pm, nw)[:delta_dcswitch_phi] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :dcswitch)], base_name="$(nw)_diff_dcswitch_vm",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "z_switch_start", 1.0)
     )
 
@@ -769,8 +832,8 @@ end
 function auxiliary_diff_DC_switch_voltage_magnitude(pm::_PM.AbstractWRModels; nw::Int=_PM.nw_id_default, bounded::Bool=true, relax::Bool=false, report::Bool=true)
     delta_dcswitch_w = _PM.var(pm, nw)[:delta_dcswitch_w] = JuMP.@variable(pm.model,
     [l in _PM.ids(pm, nw, :dcswitch)], base_name="$(nw)_diff_dcswitch_w",
-    lower_bound = -5.0,
-    upper_bound = 5.0,
+    lower_bound = -0.21,
+    upper_bound = 0.21,
     start = _PM.comp_start_value(_PM.ref(pm, nw, :dcswitch, l), "z_switch_start", 1.0)
     )
 

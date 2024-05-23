@@ -50,12 +50,47 @@ function constraint_switch_voltage_on_off(pm::_PM.AbstractLPACCModel, n::Int, i,
     JuMP.@constraint(pm.model, z*va_fr == z*va_to)
 end
 
+function constraint_switch_voltage_on_off_big_M(pm::_PM.AbstractLPACCModel, n::Int, i, f_bus, t_bus)
+    phi_fr = _PM.var(pm, n, :phi, f_bus)
+    phi_to = _PM.var(pm, n, :phi, t_bus)
+    va_fr = _PM.var(pm, n, :va, f_bus)
+    va_to = _PM.var(pm, n, :va, t_bus)
+    z = _PM.var(pm, n, :z_switch, i)
+    M_vm = 1
+    M_va = 2*pi
+
+    JuMP.@constraint(pm.model, phi_fr - phi_to <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model, va_fr - va_to <= (1-z)*M_va)
+
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= phi_fr - phi_to)
+    JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_fr - va_to)
+
+    JuMP.@constraint(pm.model, phi_to - phi_fr <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model, va_to - va_fr <= (1-z)*M_va)
+
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= phi_to - phi_fr)
+    JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_to - va_fr)
+end
+
 function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractLPACCModel, n::Int, i, f_busdc, t_busdc)
     phi_fr = _PM.var(pm, n, :phi_vdcm, f_busdc)
     phi_to = _PM.var(pm, n, :phi_vdcm, t_busdc)
     z = _PM.var(pm, n, :z_dcswitch, i)
 
     JuMP.@constraint(pm.model, z*phi_fr == z*phi_to)
+end
+
+function constraint_dc_switch_voltage_on_off_big_M(pm::_PM.AbstractLPACCModel, n::Int, i, f_busdc, t_busdc)
+    phi_fr = _PM.var(pm, n, :phi_vdcm, f_busdc)
+    phi_to = _PM.var(pm, n, :phi_vdcm, t_busdc)
+    z = _PM.var(pm, n, :z_dcswitch, i)
+    M_vm = 1
+
+    JuMP.@constraint(pm.model, phi_fr - phi_to <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= phi_fr - phi_to)
+
+    JuMP.@constraint(pm.model, phi_to - phi_fr <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= phi_to - phi_fr)
 end
 
 function constraint_power_balance_ac_switch(pm::_PM.AbstractLPACCModel, n::Int, i::Int, bus_arcs, bus_arcs_sw, bus_gens, bus_convs_ac, bus_loads, bus_shunts, pd, qd, gs, bs)

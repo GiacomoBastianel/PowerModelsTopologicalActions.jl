@@ -26,6 +26,28 @@ function constraint_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i, f
     JuMP.@constraint(pm.model, z*va_fr == z*va_to)
 end
 
+function constraint_switch_voltage_on_off_big_M(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus)
+    vm_fr = _PM.var(pm, n, :vm, f_bus)
+    vm_to = _PM.var(pm, n, :vm, t_bus)
+    va_fr = _PM.var(pm, n, :va, f_bus)
+    va_to = _PM.var(pm, n, :va, t_bus)
+    z = _PM.var(pm, n, :z_switch, i)
+    M_vm = 1
+    M_va = 2*pi
+
+    JuMP.@constraint(pm.model, vm_fr - vm_to <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model, va_fr - va_to <= (1-z)*M_va)
+
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_fr - vm_to)
+    JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_fr - va_to)
+
+    JuMP.@constraint(pm.model, vm_to - vm_fr <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model, va_to - va_fr <= (1-z)*M_va)
+
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_to - vm_fr)
+    JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_to - va_fr)
+end
+
 function constraint_switch_voltage(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus)
     vm_fr = _PM.var(pm, n, :vm, f_bus)
     vm_to = _PM.var(pm, n, :vm, t_bus)
@@ -49,6 +71,19 @@ function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractACPModel, n::Int, i
     z = _PM.var(pm, n, :z_dcswitch, i)
 
     JuMP.@constraint(pm.model, z*vm_fr == z*vm_to)
+end
+
+function constraint_dc_switch_voltage_on_off_big_M(pm::_PM.AbstractACPModel, n::Int, i, f_busdc, t_busdc)
+    vm_fr = _PM.var(pm, n, :vdcm, f_busdc)
+    vm_to = _PM.var(pm, n, :vdcm, t_busdc)
+    z = _PM.var(pm, n, :z_dcswitch, i)
+    M_vm = 1
+
+    JuMP.@constraint(pm.model, vm_fr - vm_to <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_fr - vm_to)
+
+    JuMP.@constraint(pm.model, vm_to - vm_fr <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_to - vm_fr)
 end
 
 function constraint_ac_switch_power(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus)
@@ -104,8 +139,8 @@ function constraint_power_balance_ac_switch(pm::_PM.AbstractACPModel, n::Int, i:
     psw  = _PM.var(pm, n, :psw)
     qsw  = _PM.var(pm, n, :qsw)
 
-    cstr_p = JuMP.@NLconstraint(pm.model, sum(p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(psw[sw] for sw in bus_arcs_sw) == sum(pg[g] for g in bus_gens)  - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*vm^2)
-    cstr_q = JuMP.@NLconstraint(pm.model, sum(q[a] for a in bus_arcs) + sum(qconv_grid_ac[c] for c in bus_convs_ac) + sum(qsw[sw] for sw in bus_arcs_sw) == sum(qg[g] for g in bus_gens)  - sum(qd[d] for d in bus_loads) + sum(bs[s] for s in bus_shunts)*vm^2)
+    cstr_p = JuMP.@NLconstraint(pm.model, sum(p[a] for a in bus_arcs) + sum(pconv_grid_ac[c] for c in bus_convs_ac) + sum(psw[sw] for sw in bus_arcs_sw) == sum(pg[g] for g in bus_gens) - sum(pd[d] for d in bus_loads) - sum(gs[s] for s in bus_shunts)*vm^2)
+    cstr_q = JuMP.@NLconstraint(pm.model, sum(q[a] for a in bus_arcs) + sum(qconv_grid_ac[c] for c in bus_convs_ac) + sum(qsw[sw] for sw in bus_arcs_sw) == sum(qg[g] for g in bus_gens) - sum(qd[d] for d in bus_loads) + sum(bs[s] for s in bus_shunts)*vm^2)
 
     if _IM.report_duals(pm)
         _PM.sol(pm, n, :bus, i)[:lam_kcl_r] = cstr_p

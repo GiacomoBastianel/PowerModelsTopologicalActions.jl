@@ -53,12 +53,69 @@ function constraint_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i, f
     JuMP.@constraint(pm.model, z*w_fr == z*w_to)
 end
 
+function constraint_switch_voltage_on_off_big_M(pm::_PM.SOCWRPowerModel, n::Int, i, f_bus, t_bus)
+    w_fr = _PM.var(pm, n, :w, f_bus)
+    w_to = _PM.var(pm, n, :w, t_bus)
+    z = _PM.var(pm, n, :z_switch, i)
+    M_vm = 1
+    M_va = 2*pi
+
+    JuMP.@constraint(pm.model, w_fr - w_to <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= w_fr - w_to)
+
+    JuMP.@constraint(pm.model, w_to - w_fr <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= w_to - w_fr)
+end
+
+function constraint_switch_voltage_on_off_big_M(pm::_PM.QCRMPowerModel, n::Int, i, f_bus, t_bus)
+    w_fr = _PM.var(pm, n, :w, f_bus)
+    w_to = _PM.var(pm, n, :w, t_bus)
+    vm_fr = _PM.var(pm, n, :vm, f_bus)
+    vm_to = _PM.var(pm, n, :vm, t_bus)
+    va_fr = _PM.var(pm, n, :va, f_bus)
+    va_to = _PM.var(pm, n, :va, t_bus)
+    z = _PM.var(pm, n, :z_switch, i)
+    M_vm = 1
+    M_va = 2*pi
+
+    JuMP.@constraint(pm.model, w_fr - w_to <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= w_fr - w_to)
+
+    JuMP.@constraint(pm.model, w_to - w_fr <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= w_to - w_fr)
+
+    JuMP.@constraint(pm.model, vm_fr - vm_to <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model, va_fr - va_to <= (1-z)*M_va)
+
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_fr - vm_to)
+    JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_fr - va_to)
+
+    JuMP.@constraint(pm.model, vm_to - vm_fr <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model, va_to - va_fr <= (1-z)*M_va)
+
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_to - vm_fr)
+    JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_to - va_fr)
+end
+
 function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractWRModels, n::Int, i, f_busdc, t_busdc)
     wdc_fr = _PM.var(pm, n, :wdc, f_busdc)
     wdc_to = _PM.var(pm, n, :wdc, t_busdc)
     z = _PM.var(pm, n, :z_dcswitch, i)
 
     JuMP.@constraint(pm.model, z*wdc_fr == z*wdc_to)
+end
+
+function constraint_dc_switch_voltage_on_off_big_M(pm::_PM.AbstractWRModels, n::Int, i, f_busdc, t_busdc)
+    wdc_fr = _PM.var(pm, n, :wdc, f_busdc)
+    wdc_to = _PM.var(pm, n, :wdc, t_busdc)
+    z = _PM.var(pm, n, :z_dcswitch, i)
+    M_vm = 1
+
+    JuMP.@constraint(pm.model, wdc_fr - wdc_to <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= wdc_fr - wdc_to)
+
+    JuMP.@constraint(pm.model, wdc_to - wdc_fr <= (1-z)*M_vm)
+    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= wdc_to - wdc_fr)
 end
 
 function constraint_aux_switches(pm::_PM.AbstractWRModels, n::Int, i_1)

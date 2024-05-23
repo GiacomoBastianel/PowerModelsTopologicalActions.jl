@@ -18,10 +18,10 @@ function build_acdcsw_AC_reformulation(pm::_PM.AbstractPowerModel)
     variable_switch_power(pm) # variable to indicate the power flowing through an ac switch (if closed)
 
     # Bilinear variables
-    auxiliary_variable_switch_voltage_angle(pm)
-    auxiliary_variable_switch_voltage_magnitude(pm)
-    auxiliary_diff_switch_voltage_angle(pm)
-    auxiliary_diff_switch_voltage_magnitude(pm)
+    #auxiliary_variable_switch_voltage_angle(pm)
+    #auxiliary_variable_switch_voltage_magnitude(pm)
+    #auxiliary_diff_switch_voltage_angle(pm)
+    #auxiliary_diff_switch_voltage_magnitude(pm)
 
     # DC grid
     _PMACDC.variable_active_dcbranch_flow(pm)
@@ -48,12 +48,13 @@ function build_acdcsw_AC_reformulation(pm::_PM.AbstractPowerModel)
         constraint_switch_thermal_limit(pm, i) # limiting the apparent power flowing through an ac switch
         #constraint_switch_voltage_on_off(pm,i) # making sure that the voltage magnitude and angles are equal at the two extremes of a closed switch
         constraint_switch_power_on_off(pm,i) # limiting the maximum active and reactive power through an ac switch
-        constraint_aux_switches(pm, i)
-        constraint_aux_differences(pm, i)
-        constraint_1_aux_voltage_angles(pm, i)
-        constraint_2_aux_voltage_angles(pm, i)
-        constraint_1_aux_voltage_magnitudes(pm, i)
-        constraint_2_aux_voltage_magnitudes(pm, i)
+        constraint_switch_voltage_on_off_big_M(pm,i)
+        #constraint_aux_switches(pm, i)
+        #constraint_aux_differences(pm, i)
+        #constraint_1_aux_voltage_angles(pm, i)
+        #constraint_2_aux_voltage_angles(pm, i)
+        #constraint_1_aux_voltage_magnitudes(pm, i)
+        #constraint_2_aux_voltage_magnitudes(pm, i)
     end
 
     for i in _PM.ids(pm, :switch_couples)

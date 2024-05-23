@@ -307,6 +307,13 @@ function constraint_switch_voltage_on_off(pm::_PM.AbstractPowerModel, i::Int; nw
     constraint_switch_voltage_on_off(pm, nw, i, switch["f_bus"], switch["t_bus"])
 end
 
+function constraint_switch_voltage_on_off_big_M(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :switch, i)
+    
+    constraint_switch_voltage_on_off_big_M(pm, nw, i, switch["f_bus"], switch["t_bus"])
+end
+    
+
 function constraint_switch_voltage(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch = _PM.ref(pm, nw, :switch, i)
     #vad_min = _PM.ref(pm, nw, :off_angmin)
@@ -322,6 +329,13 @@ function constraint_dc_switch_voltage_on_off(pm::_PM.AbstractPowerModel, i::Int;
 
     constraint_dc_switch_voltage_on_off(pm, nw, i, switch["f_busdc"], switch["t_busdc"])
 end
+
+function constraint_dc_switch_voltage_on_off_big_M(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch = _PM.ref(pm, nw, :dcswitch, i)
+    
+    constraint_dc_switch_voltage_on_off_big_M(pm, nw, i, switch["f_busdc"], switch["t_busdc"])
+end
+    
 
 function constraint_exclusivity_switch_no_OTS(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     switch_couple = _PM.ref(pm, nw, :switch_couples, i)
