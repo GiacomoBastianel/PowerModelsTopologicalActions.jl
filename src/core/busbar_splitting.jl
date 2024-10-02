@@ -470,10 +470,9 @@ end
 
 # Function to split a set of selected AC busbars and create an augmented network representation of the grid with switches linking every grid element to the two parts of the splitted busbars 
 function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatever number of ac busbars
-    
     # Adding a new key to indicate which bus can be split + ZIL
     if length(bus_to_be_split) == 1
-        for i in keys(data["bus"])
+        for i in eachindex(data["bus"])
             if parse(Int64,i) != bus_to_be_split
                 data["bus"]["$i"]["split"] = false
             end
@@ -493,7 +492,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
     end
 
     # Adding a new bus to represent the split, basing on "split" == true indicated before
-    n_buses_original = length(data["bus"])
+    n_buses_original = maximum([bus["index"] for (b, bus) in data["bus"]]) 
     count_ = 0
     for (b_id,b) in data["bus"] 
         if b["split"] == true && parse(Int64,b_id) <= n_buses_original # make sure we include only the original buses
@@ -518,7 +517,12 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
             extremes_ZIL["$split_bus"] = []
         end
     end
-    for b in 1:length(data["bus"])
+    buses_ = []
+    for (b_id,b) in data["bus"]
+        push!(buses_,b["index"])
+    end
+    buses_ordered = sort(buses_)
+    for b in buses_ordered#1:length(data["bus"])
         if haskey(data["bus"]["$b"],"ZIL")
             for i in eachindex(extremes_ZIL)
                 if data["bus"]["$b"]["bus_split"] == parse(Int64,i) # counting only the buses related to the bus split, pushing them to the keys in the dictionary
@@ -537,9 +541,9 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
         data["switch"]["$switch_id"]["f_bus"] = deepcopy(extremes_ZIL[i][1]) # assigning from and to bus to each switch. One switch for each key in the extremes_ZIL
         data["switch"]["$switch_id"]["t_bus"] = deepcopy(extremes_ZIL[i][2])
         data["switch"]["$switch_id"]["index"] = switch_id
-        data["switch"]["$switch_id"]["psw"] = 10.0 # assuming a maximum active power for the switch
-        data["switch"]["$switch_id"]["qsw"] = 10.0 # assuming a maximum reactive power for the switch
-        data["switch"]["$switch_id"]["thermal_rating"] = 10.0
+        data["switch"]["$switch_id"]["psw"] = 40.0 # assuming a maximum active power for the switch
+        data["switch"]["$switch_id"]["qsw"] = 40.0 # assuming a maximum reactive power for the switch
+        data["switch"]["$switch_id"]["thermal_rating"] = 0.0
         data["switch"]["$switch_id"]["state"] = 1
         data["switch"]["$switch_id"]["status"] = 1
         data["switch"]["$switch_id"]["source_id"] = []
@@ -551,7 +555,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
     # Add a bus for each grid element connected to the bus being split
     # Gen
     for (g_id,g) in data["gen"] 
-        n_buses = length(data["bus"]) # number of buses before starting to create new buses to link all the generators attached to the bus being split
+        n_buses = maximum([bus["index"] for (b, bus) in data["bus"]]) # number of buses before starting to create new buses to link all the generators attached to the bus being split
         for i in eachindex(extremes_ZIL)
             if g["gen_bus"] == parse(Int64,i) # isolating the generators connected to the split busbar. Adding new buses in PowerModels format
                 added_gen_bus = n_buses + 1
@@ -572,7 +576,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
     
     # Load -> repeating what was done for the generators. Refer to the generator part above for detailed comments.
     for (l_id,l) in data["load"] 
-        n_buses = length(data["bus"])
+        n_buses = maximum([bus["index"] for (b, bus) in data["bus"]]) # number of buses before starting to create new buses to link all the generators attached to the bus being split
         for i in eachindex(extremes_ZIL)
             if l["load_bus"] == parse(Int64,i)
                 added_load_bus = n_buses + 1
@@ -593,8 +597,8 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
     
     # Branch -> repeating what was done for the generators. Refer to the generator part above for detailed comments.
     for (br_id,br) in data["branch"] 
+        n_buses = maximum([bus["index"] for (b, bus) in data["bus"]]) # number of buses before starting to create new buses to link all the generators attached to the bus being split
         for i in eachindex(extremes_ZIL)
-            n_buses = length(data["bus"])
             if br["f_bus"] == parse(Int64,i) && !haskey(br,"ZIL") # making sure this is not a ZIL, f_bus part. Redundant if, but useful if one decides to model the ZIL as a branch and not as a switch. 
                 added_branch_bus = n_buses + 1
                 data["bus"]["$added_branch_bus"] = deepcopy(data["bus"]["1"])
@@ -630,7 +634,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split) # one can split whatev
     # Converters -> repeating what was done for the generators. Refer to the generator part above for detailed comments.
     if haskey(data,"convdc")
         for (cv_id,cv) in data["convdc"] 
-            n_buses = length(data["bus"])
+            n_buses = maximum([bus["index"] for (b, bus) in data["bus"]]) # number of buses before starting to create new buses to link all the generators attached to the bus being split
             for i in eachindex(extremes_ZIL)
                 if cv["busac_i"] == parse(Int64,i)
                     added_conv_bus = n_buses + 1

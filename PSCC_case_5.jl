@@ -85,32 +85,22 @@ _PMACDC.process_additional_data!(data_5_acdc)
 ## Optimal Power Flow models ##
 #######################################################################################
 # OPF simulations
-result_opf_ac_5 = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s)
-result_opf_ac_39 = _PMACDC.run_acdcopf(data_39_acdc,ACPPowerModel,ipopt; setting = s)
-result_opf_ac_67 = _PMACDC.run_acdcopf(data_67_acdc,ACPPowerModel,ipopt; setting = s)
+#result_opf_ac_5 = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s)
+#result_opf_ac_39 = _PMACDC.run_acdcopf(data_39_acdc,ACPPowerModel,ipopt; setting = s)
+#result_opf_ac_67 = _PMACDC.run_acdcopf(data_67_acdc,ACPPowerModel,ipopt; setting = s)
 result_opf_ac_588 = _PMACDC.run_acdcopf(data_588_acdc,ACPPowerModel,ipopt; setting = s)
-result_opf_ac_3120 = _PMACDC.run_acdcopf(data_3120_acdc,ACPPowerModel,ipopt; setting = s)
+#result_opf_ac_3120 = _PMACDC.run_acdcopf(data_3120_acdc,ACPPowerModel,ipopt; setting = s)
 
 
 result_opf_soc_5 = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
 result_opf_qc = _PMACDC.run_acdcopf(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
-result_opf_lpac = _PMACDC.run_acdcopf(data_5_acdc,LPACCPowerModel,ipopt; setting = s)
+result_opf_lpac = _PMACDC.run_acdcopf(data_5_acdc,LPACCPowerModel,gurobi; setting = s)
 
-#=
+
 #######################################################################################
 ## Optimal transmission switching models ##
 #######################################################################################
 # AC/DC OTS simulations
-
-result_ots_ac = _PMTP.run_acdcots_AC(data_5_acdc,ACPPowerModel,juniper; setting = s)
-result_ots_soc = _PMTP.run_acdcots_AC(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
-result_ots_qc = _PMTP.run_acdcots_AC(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
-result_ots_lpac = _PMTP.run_acdcots_AC(data_5_acdc,LPACCPowerModel,gurobi; setting = s)
-
-result_ots_ac_39 = _PMTP.run_acdcots_AC(data_39_acdc,ACPPowerModel,juniper; setting = s)
-result_ots_dc_39 = _PMTP.run_acdcots_DC(data_39_acdc,ACPPowerModel,juniper; setting = s)
-result_ots_ac_dc_39 = _PMTP.run_acdcots_AC_DC(data_39_acdc,ACPPowerModel,juniper; setting = s)
-
 
 for (br_id,br) in data_39_acdc["branch"]
     print([br_id,result_ots_ac_dc_39["solution"]["branch"][br_id]["br_status"]],"\n")
@@ -122,28 +112,15 @@ for (br_id,br) in data_39_acdc["convdc"]
     print([br_id,result_ots_ac_dc_39["solution"]["convdc"][br_id]["conv_status"]],"\n")
 end
 
-
+for (g_id, g) in data_588_acdc["gen"]
+    g["cost"][1] = g["cost"][1]/10^4
+end 
 
 
 
 result_ots_ac_588 = _PMTP.run_acdcots_AC(data_588_acdc,ACPPowerModel,juniper; setting = s)
-
-
 result_ots_dc_588 = _PMTP.run_acdcots_DC(data_588_acdc,ACPPowerModel,juniper; setting = s)
 
-result_ots_dc_3120 = _PMTP.run_acdcots_DC(data_3120_acdc,ACPPowerModel,juniper; setting = s)
-
-
-
-result_ots_DC_ac = _PMTP.run_acdcots_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
-result_ots_DC_soc = _PMTP.run_acdcots_DC(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
-result_ots_DC_qc = _PMTP.run_acdcots_DC(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
-result_ots_DC_lpac = _PMTP.run_acdcots_DC(data_5_acdc,LPACCPowerModel,gurobi; setting = s)
-
-result_ots_AC_DC_ac = _PMTP.run_acdcots_AC_DC(data_5_acdc,ACPPowerModel,juniper; setting = s)
-result_ots_AC_DC_soc = _PMTP.run_acdcots_AC_DC(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
-result_ots_AC_DC_qc = _PMTP.run_acdcots_AC_DC(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
-result_ots_AC_DC_lpac = _PMTP.run_acdcots_AC_DC(data_5_acdc,LPACCPowerModel,gurobi; setting = s)
 
 ##############
 # Showing the utilization of each branch, to be intended as absolute values

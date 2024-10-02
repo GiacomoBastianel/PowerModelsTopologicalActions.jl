@@ -41,11 +41,11 @@ function constraint_switch_voltage_on_off_big_M(pm::_PM.AbstractACPModel, n::Int
     JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_fr - vm_to)
     JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_fr - va_to)
 
-    JuMP.@constraint(pm.model, vm_to - vm_fr <= (1-z)*M_vm)
-    JuMP.@constraint(pm.model, va_to - va_fr <= (1-z)*M_va)
-
-    JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_to - vm_fr)
-    JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_to - va_fr)
+    #JuMP.@constraint(pm.model, vm_to - vm_fr <= (1-z)*M_vm)
+    #JuMP.@constraint(pm.model, va_to - va_fr <= (1-z)*M_va)
+    #
+    #JuMP.@constraint(pm.model,  - (1-z)*M_vm <= vm_to - vm_fr)
+    #JuMP.@constraint(pm.model,  - (1-z)*M_va <= va_to - va_fr)
 end
 
 function constraint_switch_voltage(pm::_PM.AbstractACPModel, n::Int, i, f_bus, t_bus)
