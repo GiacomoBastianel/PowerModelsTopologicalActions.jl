@@ -28,10 +28,10 @@ function constraint_conv_transformer_dc_ots(pm::_PM.AbstractACPModel, n::Int, i:
 end
 
 function ac_power_flow_constraints_dc_ots(model, g, b, gsh_fr, vm_fr, vm_to, va_fr, va_to, p_fr, p_to, q_fr, q_to, tm, z_DC)
-    c1 = JuMP.@NLconstraint(model, p_fr == z_DC*( g/(tm^2)*vm_fr^2 + -g/(tm)*vm_fr*vm_to * cos(va_fr-va_to) + -b/(tm)*vm_fr*vm_to*sin(va_fr-va_to)))
-    c2 = JuMP.@NLconstraint(model, q_fr == z_DC*(-b/(tm^2)*vm_fr^2 +  b/(tm)*vm_fr*vm_to * cos(va_fr-va_to) + -g/(tm)*vm_fr*vm_to*sin(va_fr-va_to)))
-    c3 = JuMP.@NLconstraint(model, p_to == z_DC*( g*vm_to^2 + -g/(tm)*vm_to*vm_fr  *    cos(va_to - va_fr)  + -b/(tm)*vm_to*vm_fr*sin(va_to - va_fr)))
-    c4 = JuMP.@NLconstraint(model, q_to == z_DC*(-b*vm_to^2 +  b/(tm)*vm_to*vm_fr  *    cos(va_to - va_fr)  + -g/(tm)*vm_to*vm_fr*sin(va_to - va_fr)))
+    c1 = JuMP.@constraint(model, p_fr == z_DC*( g/(tm^2)*vm_fr^2 + -g/(tm)*vm_fr*vm_to * cos(va_fr-va_to) + -b/(tm)*vm_fr*vm_to*sin(va_fr-va_to)))
+    c2 = JuMP.@constraint(model, q_fr == z_DC*(-b/(tm^2)*vm_fr^2 +  b/(tm)*vm_fr*vm_to * cos(va_fr-va_to) + -g/(tm)*vm_fr*vm_to*sin(va_fr-va_to)))
+    c3 = JuMP.@constraint(model, p_to == z_DC*( g*vm_to^2 + -g/(tm)*vm_to*vm_fr  *    cos(va_to - va_fr)  + -b/(tm)*vm_to*vm_fr*sin(va_to - va_fr)))
+    c4 = JuMP.@constraint(model, q_to == z_DC*(-b*vm_to^2 +  b/(tm)*vm_to*vm_fr  *    cos(va_to - va_fr)  + -g/(tm)*vm_to*vm_fr*sin(va_to - va_fr)))
     return c1, c2, c3, c4
 end
 
@@ -45,7 +45,7 @@ function constraint_conv_filter_dc_ots(pm::_PM.AbstractACPModel, n::Int, i::Int,
     vmf = _PM.var(pm, n, :vmf, i)
 
     JuMP.@constraint(pm.model,   ppr_fr + ptf_to == 0 )
-    JuMP.@NLconstraint(pm.model, qpr_fr + qtf_to +  (-bv) * filter *vmf^2 == 0)
+    JuMP.@constraint(pm.model, qpr_fr + qtf_to +  (-bv) * filter *vmf^2 == 0)
 end
 
 function constraint_converter_losses_dc_ots(pm::_PM.AbstractACPModel, n::Int, i::Int, a, b, c, plmax)
@@ -54,7 +54,7 @@ function constraint_converter_losses_dc_ots(pm::_PM.AbstractACPModel, n::Int, i:
     iconv = _PM.var(pm, n, :iconv_ac, i)
     z_DC = _PM.var(pm, n, :z_conv_dc, i)
 
-    JuMP.@NLconstraint(pm.model, pconv_ac + pconv_dc == z_DC*(a + b*iconv + c*iconv^2))
+    JuMP.@constraint(pm.model, pconv_ac + pconv_dc == z_DC*(a + b*iconv + c*iconv^2))
 end
 
 function constraint_conv_reactor_dc_ots(pm::_PM.AbstractACPModel, n::Int, i::Int, rc, xc, reactor)
@@ -77,10 +77,10 @@ function constraint_conv_reactor_dc_ots(pm::_PM.AbstractACPModel, n::Int, i::Int
         yc = 1/(zc)
         gc = real(yc)
         bc = imag(yc)
-        JuMP.@NLconstraint(pm.model, - pconv_ac == z_DC*( gc*vmc^2 + -gc*vmc*vmf*cos(vac-vaf) + -bc*vmc*vmf*sin(vac-vaf))) # JuMP doesn't allow affine expressions in NL constraints
-        JuMP.@NLconstraint(pm.model, - qconv_ac == z_DC*(-bc*vmc^2 +  bc*vmc*vmf*cos(vac-vaf) + -gc*vmc*vmf*sin(vac-vaf))) # JuMP doesn't allow affine expressions in NL constraints
-        JuMP.@NLconstraint(pm.model, ppr_fr ==     z_DC*( gc *vmf^2 + -gc *vmf*vmc*cos(vaf - vac) + -bc *vmf*vmc*sin(vaf - vac)))
-        JuMP.@NLconstraint(pm.model, qpr_fr ==     z_DC*(-bc *vmf^2 +  bc *vmf*vmc*cos(vaf - vac) + -gc *vmf*vmc*sin(vaf - vac)))
+        JuMP.@constraint(pm.model, - pconv_ac == z_DC*( gc*vmc^2 + -gc*vmc*vmf*cos(vac-vaf) + -bc*vmc*vmf*sin(vac-vaf))) # JuMP doesn't allow affine expressions in NL constraints
+        JuMP.@constraint(pm.model, - qconv_ac == z_DC*(-bc*vmc^2 +  bc*vmc*vmf*cos(vac-vaf) + -gc*vmc*vmf*sin(vac-vaf))) # JuMP doesn't allow affine expressions in NL constraints
+        JuMP.@constraint(pm.model, ppr_fr ==     z_DC*( gc *vmf^2 + -gc *vmf*vmc*cos(vaf - vac) + -bc *vmf*vmc*sin(vaf - vac)))
+        JuMP.@constraint(pm.model, qpr_fr ==     z_DC*(-bc *vmf^2 +  bc *vmf*vmc*cos(vaf - vac) + -gc *vmf*vmc*sin(vaf - vac)))
     else
         JuMP.@constraint(pm.model, ppr_fr + ppr_to == 0)
         JuMP.@constraint(pm.model, qpr_fr + qpr_to == 0)
@@ -94,8 +94,8 @@ function constraint_conv_firing_angle(pm::_PM.AbstractACPModel, n::Int, i::Int, 
     q = _PM.var(pm, n, :qconv_ac, i)
     phi = _PM.var(pm, n, :phiconv, i)
 
-    JuMP.@NLconstraint(pm.model, p == cos(phi) * S)
-    JuMP.@NLconstraint(pm.model, q == sin(phi) * S)
+    JuMP.@constraint(pm.model, p == cos(phi) * S)
+    JuMP.@constraint(pm.model, q == sin(phi) * S)
 end
 
 function constraint_converter_current_ots(pm::_PM.AbstractACPModel, n::Int, i::Int, Umax, Imax)
@@ -105,7 +105,7 @@ function constraint_converter_current_ots(pm::_PM.AbstractACPModel, n::Int, i::I
     iconv = _PM.var(pm, n, :iconv_ac, i)
     z_dc = _PM.var(pm, n, :z_conv_dc, i)
 
-    JuMP.@NLconstraint(pm.model, pconv_ac^2 + qconv_ac^2 == z_dc * vmc^2 * iconv^2)
+    JuMP.@constraint(pm.model, pconv_ac^2 + qconv_ac^2 == z_dc * vmc^2 * iconv^2)
 end
 
 function variable_voltage_slack_ots(pm::_PM.AbstractACPModel; nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool=false)

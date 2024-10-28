@@ -48,8 +48,8 @@ function build_acdcsw_AC(pm::_PM.AbstractPowerModel)
     end
 
     for i in _PM.ids(pm, :switch_couples)
-        constraint_exclusivity_switch(pm, i) # the sum of the switches in a couple must be lower or equal than one (if OTS is allowed, like here), as each grid element is connected to either part of a split busbar no matter if the ZIL switch is opened or closed
-        constraint_BS_OTS_branch(pm,i) # making sure that if the grid element is not reconnected to the split busbar, the active and reactive power flowing through the switch is 0
+        constraint_exclusivity_switch_no_OTS(pm, i) # the sum of the switches in a couple must be lower or equal than one (if OTS is allowed, like here), as each grid element is connected to either part of a split busbar no matter if the ZIL switch is opened or closed
+        #constraint_BS_OTS_branch(pm,i) # making sure that if the grid element is not reconnected to the split busbar, the active and reactive power flowing through the switch is 0
     end
 
     for i in _PM.ids(pm, :branch)
@@ -415,7 +415,7 @@ function build_acdcsw_opf_AC(pm::_PM.AbstractPowerModel)
     _PM.variable_gen_power(pm)
     _PM.variable_branch_power(pm)
 
-    #variable_switch_indicator(pm) # binary variable to indicate the status of an ac switch
+    variable_switch_indicator(pm) # binary variable to indicate the status of an ac switch
     variable_switch_power(pm) # variable to indicate the power flowing through an ac switch (if closed)
 
     # DC grid
@@ -445,10 +445,10 @@ function build_acdcsw_opf_AC(pm::_PM.AbstractPowerModel)
         constraint_switch_power(pm,i) # limiting the maximum active and reactive power through an ac switch
     end
 
-    #for i in _PM.ids(pm, :switch_couples)
-    #    constraint_exclusivity_switch(pm, i) # the sum of the switches in a couple must be lower or equal than one (if OTS is allowed, like here), as each grid element is connected to either part of a split busbar no matter if the ZIL switch is opened or closed
-    #    constraint_BS_OTS_branch(pm,i) # making sure that if the grid element is not reconnected to the split busbar, the active and reactive power flowing through the switch is 0
-    #end
+    for i in _PM.ids(pm, :switch_couples)
+        constraint_exclusivity_switch(pm, i) # the sum of the switches in a couple must be lower or equal than one (if OTS is allowed, like here), as each grid element is connected to either part of a split busbar no matter if the ZIL switch is opened or closed
+        #constraint_BS_OTS_branch(pm,i) # making sure that if the grid element is not reconnected to the split busbar, the active and reactive power flowing through the switch is 0
+    end
 
     for i in _PM.ids(pm, :branch)
         _PM.constraint_ohms_yt_from(pm, i)

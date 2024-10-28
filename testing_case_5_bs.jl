@@ -50,12 +50,11 @@ result_opf_ac_soc = _PMACDC.run_acdcopf(data,SOCWRPowerModel,gurobi; setting = s
 #######################################################################################
 ## Busbar splitting models ##
 #######################################################################################
-
 data_busbars_ac_split = deepcopy(data)
 data_busbars_dc_split = deepcopy(data)
 
 # Selecting which busbars are split
-splitted_bus_ac = [2,4]
+splitted_bus_ac = 2
 splitted_bus_dc = 1
 
 

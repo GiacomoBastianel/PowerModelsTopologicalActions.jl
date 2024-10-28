@@ -31,7 +31,7 @@ function build_acdcsw_AC_opf(pm::_PM.AbstractPowerModel)
     _PM.constraint_model_voltage(pm)
     _PMACDC.constraint_voltage_dc(pm)
 
-    #variable_switch_indicator(pm) # binary variable to indicate the status of an ac switch
+    variable_switch_indicator(pm) # binary variable to indicate the status of an ac switch
     variable_switch_power(pm) # variable to indicate the power flowing through an ac switch (if closed)
 
 
@@ -232,7 +232,7 @@ function build_acdcsw_AC_DC_opf(pm::_PM.AbstractPowerModel)
 end
 
 ""
-function run_acdcsw_AC_DC_opf(file::String, model_type::Type, solver; kwargs...)
+function run_acdcsw_AC_DC_opf_sp(file::String, model_type::Type, solver; kwargs...)
     data = _PM.parse_file(file)
     PowerModelsACDC.process_additional_data!(data)
     return run_acdcopf(data, model_type, solver; ref_extensions = [_PMACDC.add_ref_dcgrid_dcswitch!,add_ref_dcgrid!], kwargs...)

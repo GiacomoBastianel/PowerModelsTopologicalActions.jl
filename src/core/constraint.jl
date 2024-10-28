@@ -62,30 +62,30 @@ end
 
 function constraint_linearised_binary_variable(pm::_PM.AbstractPowerModel, n::Int, i, csi)
     z = _PM.var(pm, n, :z_branch, i)
-    JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+    JuMP.@constraint(pm.model,  z*(1-z) <= csi)
 end
 
 function constraint_linearised_binary_variable_DC_branch(pm::_PM.AbstractPowerModel, n::Int, i, csi)
     z = _PM.var(pm, n, :z_ots_dc, i)
-    JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+    JuMP.@constraint(pm.model,  z*(1-z) <= csi)
 end
 
 function constraint_linearised_binary_variable_DC_conv(pm::_PM.AbstractPowerModel, n::Int, i, csi)
     z = _PM.var(pm, n, :z_conv_dc, i)
-    JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+    JuMP.@constraint(pm.model,  z*(1-z) <= csi)
 end
 
 ###################### Busbar Splitting Constraints ############################
 function constraint_linearised_binary_variable_switch(pm::_PM.AbstractPowerModel, n::Int, i, csi)
 z = _PM.var(pm, n, :z_switch, i)
-JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+JuMP.@constraint(pm.model,  z*(1-z) <= csi)
 end
 
 function constraint_linearised_binary_variable_switch_no_ZIL(pm::_PM.AbstractPowerModel, n::Int, i, csi)
     sw = _PM.ref(pm, n, :switch, i)
     if sw["ZIL"] == false
         z = _PM.var(pm, n, :z_switch, i)
-        JuMP.@NLconstraint(pm.model,  z*(1-z) <= csi)
+        JuMP.@constraint(pm.model,  z*(1-z) <= csi)
     end
 end
 

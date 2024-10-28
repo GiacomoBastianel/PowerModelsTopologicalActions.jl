@@ -10,12 +10,19 @@ using Mosek, MosekTools
 #######################################################################################
 ## Define solver ##
 #######################################################################################
+using JuMP, Ipopt
+import HSL_jll
+model = Model(Ipopt.Optimizer)
+set_attribute(model, "hsllib", HSL_jll.libhsl_path)
+set_attribute(model, "linear_solver", "ma86")
+
 
 ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
 highs = JuMP.optimizer_with_attributes(HiGHS.Optimizer)
 gurobi = JuMP.optimizer_with_attributes(Gurobi.Optimizer)
 juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt, "mip_solver" => gurobi, "time_limit" => 36000)
 mosek = JuMP.optimizer_with_attributes(Mosek.Optimizer)
+
 
 #######################################################################################
 ## Input data ##
@@ -26,46 +33,12 @@ paper_results_case_5_AC_BS_all = Dict{String,Any}()
 paper_results_case_5_AC_DC_BS_all = Dict{String,Any}()
 
 test_case_5_acdc = "case5_acdc.m"
-test_case_39_acdc = "case39_acdc.m"
-test_case_67_acdc = "case67.m"
-test_case_588_acdc = "pglib_opf_case588_sdet_acdc.m"
-test_case_3120_acdc = "case3120sp_mcdc.m"
 
 data_file_5_acdc = joinpath(@__DIR__,"data_sources",test_case_5_acdc)
-data_file_39_acdc = joinpath(@__DIR__,"data_sources",test_case_39_acdc)
-data_file_67_acdc = joinpath(@__DIR__,"data_sources",test_case_67_acdc)
-data_file_588_acdc = joinpath(@__DIR__,"data_sources",test_case_588_acdc)
-data_file_3120_acdc = joinpath(@__DIR__,"data_sources",test_case_3120_acdc)
-
 data_original_5_acdc = _PM.parse_file(data_file_5_acdc)
-data_original_39_acdc = _PM.parse_file(data_file_39_acdc)
-data_original_67_acdc = _PM.parse_file(data_file_67_acdc)
-data_original_588_acdc = _PM.parse_file(data_file_588_acdc)
-data_original_3120_acdc = _PM.parse_file(data_file_3120_acdc)
-
-data_5_acdc = deepcopy(data_original_5_acdc)
-data_39_acdc = deepcopy(data_original_39_acdc)
-data_67_acdc = deepcopy(data_original_67_acdc)
-data_588_acdc = deepcopy(data_original_588_acdc)
-data_3120_acdc = deepcopy(data_original_3120_acdc)
 
 _PMACDC.process_additional_data!(data_5_acdc)
-_PMACDC.process_additional_data!(data_39_acdc)
-_PMACDC.process_additional_data!(data_67_acdc)
-_PMACDC.process_additional_data!(data_588_acdc)
-_PMACDC.process_additional_data!(data_3120_acdc)
 
-#=
-for (l_id,l) in data_39_acdc["load"]
-    if l_id != "4"
-        l["pd"] = 0
-        l["qd"] = 0
-    else
-        l["pd"] = l["pd"]*6
-        l["qd"] = l["qd"]*6
-    end
-end
-=#
 
 #######################################################################################
 ## Parsing input data ##
@@ -85,14 +58,9 @@ _PMACDC.process_additional_data!(data_5_acdc)
 ## Optimal Power Flow models ##
 #######################################################################################
 # OPF simulations
-#result_opf_ac_5 = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s)
-#result_opf_ac_39 = _PMACDC.run_acdcopf(data_39_acdc,ACPPowerModel,ipopt; setting = s)
-#result_opf_ac_67 = _PMACDC.run_acdcopf(data_67_acdc,ACPPowerModel,ipopt; setting = s)
-result_opf_ac_588 = _PMACDC.run_acdcopf(data_588_acdc,ACPPowerModel,ipopt; setting = s)
-#result_opf_ac_3120 = _PMACDC.run_acdcopf(data_3120_acdc,ACPPowerModel,ipopt; setting = s)
+result_opf_ac = _PMACDC.run_acdcopf(data_5_acdc,ACPPowerModel,ipopt; setting = s)
 
-
-result_opf_soc_5 = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
+result_opf_soc = _PMACDC.run_acdcopf(data_5_acdc,SOCWRPowerModel,gurobi; setting = s)
 result_opf_qc = _PMACDC.run_acdcopf(data_5_acdc,QCRMPowerModel,gurobi; setting = s)
 result_opf_lpac = _PMACDC.run_acdcopf(data_5_acdc,LPACCPowerModel,gurobi; setting = s)
 
@@ -101,26 +69,7 @@ result_opf_lpac = _PMACDC.run_acdcopf(data_5_acdc,LPACCPowerModel,gurobi; settin
 ## Optimal transmission switching models ##
 #######################################################################################
 # AC/DC OTS simulations
-
-for (br_id,br) in data_39_acdc["branch"]
-    print([br_id,result_ots_ac_dc_39["solution"]["branch"][br_id]["br_status"]],"\n")
-end
-for (br_id,br) in data_39_acdc["branchdc"]
-    print([br_id,result_ots_ac_dc_39["solution"]["branchdc"][br_id]["br_status"]],"\n")
-end
-for (br_id,br) in data_39_acdc["convdc"]
-    print([br_id,result_ots_ac_dc_39["solution"]["convdc"][br_id]["conv_status"]],"\n")
-end
-
-for (g_id, g) in data_588_acdc["gen"]
-    g["cost"][1] = g["cost"][1]/10^4
-end 
-
-
-
-result_ots_ac_588 = _PMTP.run_acdcots_AC(data_588_acdc,ACPPowerModel,juniper; setting = s)
-result_ots_dc_588 = _PMTP.run_acdcots_DC(data_588_acdc,ACPPowerModel,juniper; setting = s)
-
+result_opf_5_ac_ots = 
 
 ##############
 # Showing the utilization of each branch, to be intended as absolute values
@@ -162,9 +111,9 @@ end
 feasibility_check_opf_soc = _PMACDC.run_acdcopf(data_5_acdc_soc,ACPPowerModel,ipopt; setting = s)
 feasibility_check_opf_qc  = _PMACDC.run_acdcopf(data_5_acdc_qc,ACPPowerModel,ipopt; setting = s)
 feasibility_check_opf_lpac = _PMACDC.run_acdcopf(data_5_acdc_lpac,ACPPowerModel,ipopt; setting = s)
-=#
 
-#=
+
+
 #######################################################################################
 ## Busbar splitting models ##
 #######################################################################################
@@ -637,7 +586,7 @@ for (sw_id,sw) in data_busbars_ac_split_5_acdc_current["switch"]
     sw["rate_sw"] = 1.0
 end
 
-result_ac = _PMTP.run_acdcsw_AC_current(data_busbars_ac_split_5_acdc_current,ACPPowerModel,juniper)
+result_ac = _PMTP.run_acdcsw_AC_DC_reformulation(data_busbars_ac_split_5_acdc_current,ACPPowerModel,juniper)
 
 for (sw_id,sw) in result_ac["solution"]["switch"]
     print("Switch $(sw_id)","\n")
