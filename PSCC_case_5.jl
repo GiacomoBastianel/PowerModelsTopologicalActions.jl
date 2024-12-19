@@ -1,27 +1,28 @@
 using PowerModels; const _PM = PowerModels
 using Ipopt, JuMP
-using HiGHS, Gurobi, Juniper
+using HiGHS, Gurobi@, Juniper
 using PowerModelsACDC; const _PMACDC = PowerModelsACDC
 import PowerModelsTopologicalActionsII ; const _PMTP = PowerModelsTopologicalActionsII  
 using InfrastructureModels; const _IM = InfrastructureModels
 using JSON
 using Mosek, MosekTools
-
+using Alpine
 #######################################################################################
 ## Define solver ##
 #######################################################################################
-using JuMP, Ipopt
-import HSL_jll
-model = Model(Ipopt.Optimizer)
-set_attribute(model, "hsllib", HSL_jll.libhsl_path)
-set_attribute(model, "linear_solver", "ma86")
+#using JuMP, Ipopt
+#import HSL_jll
+#model = Model(Ipopt.Optimizer)
+#set_attribute(model, "hsllib", HSL_jll.libhsl_path)
+#set_attribute(model, "linear_solver", "ma86")
 
 
 ipopt = JuMP.optimizer_with_attributes(Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 0)
 highs = JuMP.optimizer_with_attributes(HiGHS.Optimizer)
 gurobi = JuMP.optimizer_with_attributes(Gurobi.Optimizer)
-juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt, "mip_solver" => gurobi, "time_limit" => 36000)
+juniper = JuMP.optimizer_with_attributes(Juniper.Optimizer, "nl_solver" => ipopt, "mip_solver" => highs, "time_limit" => 36000)
 mosek = JuMP.optimizer_with_attributes(Mosek.Optimizer)
+alpine = JuMP.optimizer_with_attributes(Alpine.Optimizer,"nlp_solver" => ipopt,"mip_solver" => highs)
 
 
 #######################################################################################
@@ -35,7 +36,7 @@ paper_results_case_5_AC_DC_BS_all = Dict{String,Any}()
 test_case_5_acdc = "case5_acdc.m"
 
 data_file_5_acdc = joinpath(@__DIR__,"data_sources",test_case_5_acdc)
-data_original_5_acdc = _PM.parse_file(data_file_5_acdc)
+data_5_acdc = _PM.parse_file(data_file_5_acdc)
 
 _PMACDC.process_additional_data!(data_5_acdc)
 
@@ -124,7 +125,7 @@ data_busbars_ac_split_5_acdc_no_OTS = deepcopy(data_5_acdc)
 # Selecting which busbars are split
 #splitted_bus_ac = collect(1:5)
 splitted_bus_ac = 2
-splitted_bus_dc = collect(1:3)
+#splitted_bus_dc = collect(1:3)
 
 #splitted_bus_ac = [2,4]
 
@@ -144,11 +145,19 @@ ac_bs_lpac_ref = deepcopy(data_busbars_ac_split_5_acdc)
 # One can select whether the branches originally linked to the split busbar are reconnected to either part of the split busbar or not
 # Reconnect all the branches
 result_switches_AC_ac  = _PMTP.run_acdcsw_AC(ac_bs_ac,ACPPowerModel,juniper)
+
+result_switches_AC_ac_alpine  = _PMTP.run_acdcsw_AC(ac_bs_ac,ACPPowerModel,alpine)
+
 result_switches_AC_soc  = _PMTP.run_acdcsw_AC(ac_bs_soc,SOCWRPowerModel,juniper)
 result_switches_AC_qc  = _PMTP.run_acdcsw_AC(ac_bs_qc,QCRMPowerModel,juniper)
 result_switches_AC_lpac  = _PMTP.run_acdcsw_AC(ac_bs_lpac,LPACCPowerModel,juniper)
 
 result_switches_AC_ac_ref  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_ac_ref,ACPPowerModel,juniper)
+
+result_switches_AC_ac_alpine  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_ac,ACPPowerModel,alpine)
+
+
+
 result_switches_AC_soc_ref  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_soc_ref,SOCWRPowerModel,gurobi)
 result_switches_AC_qc_ref  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_qc_ref,QCRMPowerModel,gurobi)
 result_switches_AC_lpac_ref  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_lpac_ref,LPACCPowerModel,gurobi)
