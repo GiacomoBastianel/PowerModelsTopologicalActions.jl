@@ -23,16 +23,19 @@ mosek = JuMP.optimizer_with_attributes(Mosek.Optimizer)
 #######################################################################################
 
 test_case_5_acdc = "case5_acdc.m"
-#test_case_5_acdc = "case67.m"
+test_case_67_acdc = "case67.m"
 
 
 data_file_5_acdc = joinpath(@__DIR__,"data_sources",test_case_5_acdc)
-
 data_original_5_acdc = _PM.parse_file(data_file_5_acdc)
-
 data_5_acdc = deepcopy(data_original_5_acdc)
-
 _PMACDC.process_additional_data!(data_5_acdc)
+
+data_file_67_acdc = joinpath(@__DIR__,"data_sources",test_case_67_acdc)
+data_original_67_acdc = _PM.parse_file(data_file_67_acdc)
+data_67_acdc = deepcopy(data_original_67_acdc)
+_PMACDC.process_additional_data!(data_67_acdc)
+
 
 #=
 for (l_id,l) in data_39_acdc["load"]
