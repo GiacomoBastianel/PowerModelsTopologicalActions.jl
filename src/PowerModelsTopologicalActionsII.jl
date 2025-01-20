@@ -14,8 +14,8 @@ const _IM = InfrastructureModels
 
 import JuMP
 
-import Plots
-import PlotlyJS
+#import Plots
+#import PlotlyJS
 # Create our module level logger (this will get precompiled)
 const _LOGGER = Memento.getlogger(@__MODULE__)
 
