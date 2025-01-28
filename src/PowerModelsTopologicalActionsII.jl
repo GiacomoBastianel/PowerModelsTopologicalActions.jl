@@ -31,6 +31,7 @@ include("core/busbar_splitting.jl")
 include("core/busbar_splitting_fixed.jl")
 include("core/base.jl")
 include("core/relaxation_scheme.jl")
+include("core/feasibility_check.jl")
 
 include("prob/acdcots_AC.jl")
 include("prob/acdcots_DC.jl")

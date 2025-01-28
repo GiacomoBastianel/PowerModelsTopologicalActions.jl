@@ -2,7 +2,6 @@
 
 
 ## Dimension data structure
-
 function _initialize_dim()
     Dict{Symbol,Any}(
         :pos    => NamedTuple(), # Position (order) of each dimension
