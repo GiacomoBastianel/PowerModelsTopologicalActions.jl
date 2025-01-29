@@ -27,6 +27,14 @@ function constraint_conv_transformer_dc_ots(pm::_PM.AbstractACPModel, n::Int, i:
     end
 end
 
+function constraint_converter_losses(pm::_PM.AbstractACPModel, n::Int, i::Int, a, b, c, plmax)
+    pconv_ac = _PM.var(pm, n, :pconv_ac, i)
+    pconv_dc = _PM.var(pm, n, :pconv_dc, i)
+    iconv = _PM.var(pm, n, :iconv_ac, i)
+
+    JuMP.@constraint(pm.model, pconv_ac + pconv_dc == a + b*iconv + c*iconv^2)
+end
+
 function ac_power_flow_constraints_dc_ots(model, g, b, gsh_fr, vm_fr, vm_to, va_fr, va_to, p_fr, p_to, q_fr, q_to, tm, z_DC)
     c1 = JuMP.@constraint(model, p_fr == z_DC*( g/(tm^2)*vm_fr^2 + -g/(tm)*vm_fr*vm_to * cos(va_fr-va_to) + -b/(tm)*vm_fr*vm_to*sin(va_fr-va_to)))
     c2 = JuMP.@constraint(model, q_fr == z_DC*(-b/(tm^2)*vm_fr^2 +  b/(tm)*vm_fr*vm_to * cos(va_fr-va_to) + -g/(tm)*vm_fr*vm_to*sin(va_fr-va_to)))

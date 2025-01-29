@@ -81,6 +81,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split)
         data["switch"]["$switch_id"]["state"] = 1
         data["switch"]["$switch_id"]["status"] = 1
         data["switch"]["$switch_id"]["source_id"] = []
+        data["switch"]["$switch_id"]["cost"] = 1.0
         push!(data["switch"]["$switch_id"]["source_id"],"switch")
         push!(data["switch"]["$switch_id"]["source_id"],switch_id)
         data["switch"]["$switch_id"]["ZIL"] = true
@@ -201,6 +202,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split)
                     #first switch 
                     added_switch_1 = number_switches + 1
                     data["switch"]["$added_switch_1"] = deepcopy(data["switch"]["1"])
+                    data["switch"]["$added_switch_1"]["cost"] = 0.0
                     data["switch"]["$added_switch_1"]["f_bus"] = deepcopy(parse(Int64,b_id)) 
                     data["switch"]["$added_switch_1"]["t_bus"] = deepcopy(extremes_ZIL[i][1])
                     data["switch"]["$added_switch_1"]["index"] = added_switch_1 
@@ -213,6 +215,7 @@ function AC_busbar_split_more_buses(data,bus_to_be_split)
                     #second switch
                     added_switch_2 = added_switch_1 + 1
                     data["switch"]["$added_switch_2"] = deepcopy(data["switch"]["1"])
+                    data["switch"]["$added_switch_2"]["cost"] = 0.0
                     data["switch"]["$added_switch_2"]["f_bus"] = deepcopy(parse(Int64,b_id)) 
                     data["switch"]["$added_switch_2"]["t_bus"] = deepcopy(extremes_ZIL[i][2])
                     data["switch"]["$added_switch_2"]["index"] = added_switch_2 

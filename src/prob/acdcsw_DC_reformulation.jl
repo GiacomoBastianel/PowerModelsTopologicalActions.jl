@@ -28,7 +28,8 @@ function build_acdcsw_DC_reformulation(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
     # Objective function
-    _PM.objective_min_fuel_cost(pm)
+    objective_min_fuel_cost_dc_switch(pm)
+
 
     # Constraints
     _PM.constraint_model_voltage(pm)
@@ -46,10 +47,11 @@ function build_acdcsw_DC_reformulation(pm::_PM.AbstractPowerModel)
         constraint_dc_switch_thermal_limit(pm, i) # limiting the apparent power flowing through a dc switch
         #constraint_dc_switch_voltage_on_off(pm,i) # making sure that the voltage magnituds are equal at the two extremes of a closed switch
         constraint_dc_switch_power_on_off(pm,i)  # limiting the maximum active power through a dc switch
-        constraint_aux_dcswitches(pm, i)
-        constraint_aux_dcdifferences(pm, i)
-        constraint_1_aux_voltage_dc_magnitudes(pm, i)
-        constraint_2_aux_voltage_dc_magnitudes(pm, i)
+        #constraint_aux_dcswitches(pm, i)
+        #constraint_aux_dcdifferences(pm, i)
+        #constraint_1_aux_voltage_dc_magnitudes(pm, i)
+        #constraint_2_aux_voltage_dc_magnitudes(pm, i)
+        constraint_dc_switch_voltage_on_off_big_M(pm, i)
     end
 
     for i in _PM.ids(pm, :dcswitch_couples)

@@ -45,24 +45,58 @@ data_busbars_ac_split_5_acdc_more_buses = deepcopy(data_5_acdc)
 
 # Selecting which busbars are split
 splitted_bus_ac = 2
+splitted_bus_ac = [2,3,4]
 splitted_bus_ac_more_buses = [2,4]
 
 data_busbars_ac_split_5_acdc,  switches_couples_ac_5,  extremes_ZILs_5_ac  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc,splitted_bus_ac)
 data_busbars_ac_split_5_acdc_more_buses,  switches_couples_ac_5_more_buses,  extremes_ZILs_5_ac_more_buses  = _PMTP.AC_busbar_split_more_buses(data_busbars_ac_split_5_acdc_more_buses,splitted_bus_ac_more_buses)
 
 
-
-
 # Duplicating the network data
 ac_bs_ac_ref = deepcopy(data_busbars_ac_split_5_acdc)
+ac_bs_ac_ref_Line = deepcopy(data_busbars_ac_split_5_acdc)
 ac_bs_lpac_ref = deepcopy(data_busbars_ac_split_5_acdc)
+ac_bs_lpac_ref_Line = deepcopy(data_busbars_ac_split_5_acdc)
+ac_bs_dc_ref = deepcopy(data_busbars_ac_split_5_acdc)
+ac_bs_dc_ref_Line = deepcopy(data_busbars_ac_split_5_acdc)
+
 
 # Run models
-result_switches_AC_ac_ref  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_ac_ref,ACPPowerModel,juniper)
+#result_switches_AC_ac_ref  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_ac_ref,ACPPowerModel,juniper)
+#result_switches_AC_ac_ref_Line  = _PMTP.run_acdcsw_AC_big_M_ZIL(ac_bs_ac_ref_Line,ACPPowerModel,juniper)
 result_switches_AC_lpac_ref  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_lpac_ref,LPACCPowerModel,gurobi)
+result_switches_AC_lpac_ref_Line  = _PMTP.run_acdcsw_AC_big_M_ZIL_try(ac_bs_lpac_ref_Line,LPACCPowerModel,gurobi)
+result_switches_AC_lpac_ref_try  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_lpac_ref,LPACCPowerModel,gurobi)
+result_switches_AC_lpac_ref_Line_try  = _PMTP.run_acdcsw_AC_big_M_ZIL_try(ac_bs_lpac_ref_Line,LPACCPowerModel,gurobi)
+
+result_switches_AC_dc_ref  = _PMTP.run_acdcsw_AC_reformulation(ac_bs_dc_ref,DCPPowerModel,gurobi)
+result_switches_AC_dc_ref  = _PMTP.run_acdcsw_AC_big_M_ZIL(ac_bs_dc_ref,DCPPowerModel,gurobi)
+
+
+
+result_switches_AC_ac_ref  = _PMTP.run_acdcsw_AC_big_M_ZIL(ac_bs_dc_ref,ACPPowerModel,juniper)
+result_switches_AC_ac_ref_Line  = _PMTP.run_acdcsw_AC_big_M_ZIL_try(ac_bs_lpac_ref_Line,ACPPowerModel,juniper)
+
+
+result_switches_AC_ac_ref  = _PMTP.run_acdcsw_AC(ac_bs_ac_ref,DCPPowerModel,gurobi)
+result_switches_AC_lpac_ref  = _PMTP.run_acdcsw_AC(ac_bs_lpac_ref,LPACCPowerModel,gurobi)
+
 
 # Feasibility check for the AC busbar splitting
+feasibility_check_AC_BS_opf_ac_ref_status = deepcopy(data_busbars_ac_split_5_acdc)
+feasibility_check_AC_BS_opf_ac_ref_status = _PMTP.prepare_AC_feasibility_check(result_switches_AC_ac_ref,data_busbars_ac_split_5_acdc,feasibility_check_AC_BS_opf_ac_ref_status,switches_couples_ac_5,extremes_ZILs_5_ac,data_5_acdc)
+result_feasibility_check = _PMACDC.run_acdcopf(feasibility_check_AC_BS_opf_ac_ref_status,ACPPowerModel,ipopt; setting = s)
+
 feasibility_check_AC_BS_opf_lpac_ref_status = deepcopy(data_busbars_ac_split_5_acdc)
 feasibility_check_AC_BS_opf_lpac_ref_status = _PMTP.prepare_AC_feasibility_check(result_switches_AC_lpac_ref,data_busbars_ac_split_5_acdc,feasibility_check_AC_BS_opf_lpac_ref_status,switches_couples_ac_5,extremes_ZILs_5_ac,data_5_acdc)
 result_feasibility_check = _PMACDC.run_acdcopf(feasibility_check_AC_BS_opf_lpac_ref_status,ACPPowerModel,ipopt; setting = s)
 
+
+sw = [result_switches_AC_ac_ref["solution"]["switch"]["$sw_id"]["status"] for sw_id in 1:length(ac_bs_ac_ref["switch"])]
+sw_Line = [result_switches_AC_ac_ref_Line["solution"]["switch"]["$sw_id"]["status"] for sw_id in 1:length(ac_bs_ac_ref["switch"])]
+
+sw .- sw_Line
+
+sw_lpac = [result_switches_AC_lpac_ref_Line_try["solution"]["switch"]["$sw_id"]["status"] for sw_id in 1:length(ac_bs_ac_ref["switch"])]
+sw_lpac_Line = [result_switches_AC_lpac_ref_Line["solution"]["switch"]["$sw_id"]["status"] for sw_id in 1:length(ac_bs_ac_ref["switch"])]
+sw_lpac .- sw_lpac_Line

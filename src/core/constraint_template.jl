@@ -156,6 +156,15 @@ function constraint_converter_losses_dc_ots(pm::_PM.AbstractPowerModel, i::Int; 
     constraint_converter_losses_dc_ots(pm, nw, i, a, b, c, plmax)
 end
 
+function constraint_converter_losses(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    conv = _PM.ref(pm, nw, :convdc, i)
+    a = conv["LossA"]
+    b = conv["LossB"]
+    c = conv["LossCinv"]
+    plmax = conv["LossA"] + conv["LossB"] * conv["Pacrated"] + conv["LossCinv"] * (conv["Pacrated"])^2
+    constraint_converter_losses(pm, nw, i, a, b, c, plmax)
+end
+
 function constraint_converter_losses_dc_ots_fully_constrained(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
     conv = _PM.ref(pm, nw, :convdc, i)
     a = conv["LossA"]
@@ -224,6 +233,16 @@ function constraint_exclusivity_switch(pm::_PM.AbstractPowerModel, i::Int; nw::I
     switch_couple = _PM.ref(pm, nw, :switch_couples, i)
     #constraint_exclusivity_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"],switch_couple["switch_split"])
     constraint_exclusivity_switch(pm, nw, switch_couple["f_sw"], switch_couple["t_sw"])
+end
+
+function constraint_ZIL_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_couple = _PM.ref(pm, nw, :switch_couples, i)
+    constraint_ZIL_switch(pm, nw, switch_couple["f_sw"], switch_couple["switch_split"])
+end
+
+function constraint_ZIL_dc_switch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
+    switch_couple = _PM.ref(pm, nw, :dcswitch_couples, i)
+    constraint_ZIL_dc_switch(pm, nw, switch_couple["f_sw"], switch_couple["dcswitch_split"])
 end
 
 function constraint_BS_OTS_branch(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)

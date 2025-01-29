@@ -25,7 +25,8 @@ function build_acdcsw_DC(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
     # Objective function
-    _PM.objective_min_fuel_cost(pm)
+    objective_min_fuel_cost_dc_switch(pm)
+
 
     # Constraints
     _PM.constraint_model_voltage(pm)
@@ -103,7 +104,8 @@ function build_acdcsw_DC_no_OTS(pm::_PM.AbstractPowerModel)
     _PMACDC.variable_dcgrid_voltage_magnitude(pm)
 
     # Objective function
-    _PM.objective_min_fuel_cost(pm)
+    objective_min_fuel_cost_dc_switch(pm)
+
 
     # Constraints
     _PM.constraint_model_voltage(pm)
